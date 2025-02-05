@@ -55,6 +55,7 @@ if (OPTIONS.pluginFile) {
 }
 
 const SOURCE = await getSource(OPTIONS);
+console.log("Source is now ready to use:", SOURCE);
 
 async function getSource(options: ProgramOptions) {
   if (!options.configFile) {
