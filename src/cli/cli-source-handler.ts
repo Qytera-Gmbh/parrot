@@ -6,9 +6,9 @@ import type { Source } from "../sources/source.js";
  * source may be built and immediately used in a programmatic fashion.
  */
 export abstract class SourceHandler<
-  S extends Source<unknown>,
-  C,
-  P = Parameters<S["getTestResults"]>,
+  S extends Source<unknown, unknown>,
+  SerializedSourceType,
+  SerializedParametersType = Parameters<S["getTestResults"]>,
 > {
   /**
    * Creates and returns a fully initialised source instance. The source can be generated from
@@ -31,7 +31,7 @@ export abstract class SourceHandler<
    * @param source the source instance to serialize
    * @returns the JSON-serializable serialized source
    */
-  public abstract serializeSource(source: S): C | Promise<C>;
+  public abstract serializeSource(source: S): Promise<SerializedSourceType> | SerializedSourceType;
 
   /**
    * Restores a source instance from a previously serialized configuration. The returned
@@ -44,7 +44,7 @@ export abstract class SourceHandler<
    * @param serializedSource the serialized source
    * @returns the restored source
    */
-  public abstract deserializeSource(serializedSource: C): Promise<S> | S;
+  public abstract deserializeSource(serializedSource: SerializedSourceType): Promise<S> | S;
 
   /**
    * Constructs and returns the parameters required for retrieving test results. Parameters can be
@@ -70,8 +70,8 @@ export abstract class SourceHandler<
    * @returns the JSON-serializable parameters
    */
   public abstract serializeSourceParameters(
-    parameters: Parameters<S["getTestResults"]>
-  ): P | Promise<P>;
+    ...parameters: Parameters<S["getTestResults"]>
+  ): Promise<SerializedParametersType> | SerializedParametersType;
 
   /**
    * Restores test result parameters from a previously serialized configuration. The returned
@@ -85,6 +85,6 @@ export abstract class SourceHandler<
    * @returns the restored parameters
    */
   public abstract deserializeSourceParameters(
-    serializedParameters: P
+    serializedParameters: SerializedParametersType
   ): Parameters<S["getTestResults"]> | Promise<Parameters<S["getTestResults"]>>;
 }

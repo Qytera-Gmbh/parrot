@@ -3,9 +3,22 @@ import { Command } from "commander";
 import { defaultLoaders } from "cosmiconfig";
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-import { getConfiguration, type LookupTable, type Provider } from "./config.js";
+import { SourceHandler } from "./cli-source-handler.js";
+import type { AnySourceHandler } from "./config.js";
+import { getConfiguration, type LookupTable } from "./config.js";
 
 import "dotenv/config";
+
+interface ProgramOptions {
+  configFile?: string;
+  pluginFile?: string;
+}
+
+interface SerializedSource {
+  parameters: unknown;
+  selections: string[];
+  source: unknown;
+}
 
 const PROGRAM = new Command()
   .option("-p, --plugin-file <plugin-file>", "the parrot plugin file to use", (file) => {
@@ -27,7 +40,7 @@ const PROGRAM = new Command()
 
 PROGRAM.parse();
 
-const OPTIONS = PROGRAM.opts<{ configFile?: string; pluginFile?: string }>();
+const OPTIONS = PROGRAM.opts<ProgramOptions>();
 
 if (OPTIONS.pluginFile) {
   let loader;
@@ -41,36 +54,50 @@ if (OPTIONS.pluginFile) {
   await loader(OPTIONS.pluginFile, await readFile(OPTIONS.pluginFile, "utf-8"));
 }
 
-const SOURCE_PROVIDER = await descendIntoTable(getConfiguration().sources, {
-  message: "Please select your source:",
-});
-const SOURCE = await SOURCE_PROVIDER.provider(OPTIONS.configFile);
+const SOURCE = await getSource(OPTIONS);
+console.log("source", SOURCE);
 
-const DRAIN_PROVIDER = await descendIntoTable(getConfiguration().drains, {
-  message: "Please select your drain:",
-});
-const DRAIN = await DRAIN_PROVIDER.provider(OPTIONS.configFile);
-
-if (!OPTIONS.configFile) {
-  const confirmation = await confirm({
-    message: "Would you like to save your configuration for later use?",
-  });
-  if (confirmation) {
-    const path = await input({
-      default: "config.json",
-      message: "Please specify the file to write the configuration to:",
+async function getSource(options: ProgramOptions) {
+  if (!options.configFile) {
+    const result = await descendIntoTable(getConfiguration().sources, {
+      message: "Please select your source:",
     });
-    await writeFile(path, JSON.stringify([]));
+    const source = await result.handler.buildSource();
+    const parameters = result.handler.buildSourceParameters();
+    const confirmation = await confirm({
+      message: "Would you like to save your configuration for later use?",
+    });
+    if (confirmation) {
+      const path = await input({
+        default: "config.json",
+        message: "Please specify the file to write the configuration to:",
+      });
+      const serializedSource: SerializedSource = {
+        parameters: result.handler.serializeSourceParameters(parameters),
+        selections: result.selections,
+        source: result.handler.serializeSource(source),
+      };
+      await writeFile(path, JSON.stringify(serializedSource));
+    }
+    return { parameters, source };
+  } else {
+    const serializedSource = JSON.parse(
+      await readFile(options.configFile, "utf-8")
+    ) as SerializedSource;
+    const handler = retrieveFromTable(getConfiguration().sources, serializedSource.selections);
+    const source = await handler.deserializeSource(serializedSource.source);
+    const parameters = await handler.deserializeSourceParameters(serializedSource.parameters);
+    return { parameters, source };
   }
 }
 
-console.log("source", SOURCE);
-console.log("drain", DRAIN);
-
 async function descendIntoTable(
-  table: LookupTable<Provider<unknown>>,
+  table: LookupTable<AnySourceHandler>,
   config: { message: string }
-): Promise<{ provider: Provider<unknown>; selections: string[] }> {
+): Promise<{
+  handler: AnySourceHandler;
+  selections: string[];
+}> {
   const keys = Object.keys(table);
   if (keys.length === 0) {
     throw new Error("At least one option must be provided");
@@ -80,10 +107,34 @@ async function descendIntoTable(
     message: config.message,
   });
   const value = table[choice];
-  if (typeof value === "function") {
-    return { provider: value, selections: [choice] };
+  if (value instanceof SourceHandler) {
+    return { handler: value, selections: [choice] };
   } else {
     const result = await descendIntoTable(value, { message: "Please refine your selection:" });
-    return { provider: result.provider, selections: [choice, ...result.selections] };
+    return { handler: result.handler, selections: [choice, ...result.selections] };
   }
+}
+
+function retrieveFromTable(
+  table: LookupTable<AnySourceHandler>,
+  selections: string[]
+): AnySourceHandler {
+  let currentTable = table;
+  for (let i = 0; i < selections.length; i++) {
+    const selection = selections[i];
+    if (!(selection in currentTable)) {
+      break;
+    }
+    const value = currentTable[selection];
+    if (value instanceof SourceHandler) {
+      if (i === selections.length - 1) {
+        return value;
+      } else {
+        break;
+      }
+    } else {
+      currentTable = value;
+    }
+  }
+  throw new Error(`failed to find a handler registered for selection: ${selections.join(" -> ")}`);
 }

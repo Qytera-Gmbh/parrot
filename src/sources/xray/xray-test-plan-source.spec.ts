@@ -10,8 +10,12 @@ describe(path.relative(process.cwd(), import.meta.filename), () => {
     it("returns test plan data", async () => {
       const url = getEnv("jira-url");
       const source = new TestPlanSource({
-        jira: { client: JIRA_CLIENT_CLOUD, url: url },
-        xray: { client: XRAY_CLIENT_CLOUD },
+        jira: { authentication: "basic", client: JIRA_CLIENT_CLOUD, url: url },
+        xray: {
+          authentication: "oauth2",
+          client: XRAY_CLIENT_CLOUD,
+          url: getEnv("xray-url"),
+        },
       });
       const testPlan = await source.getTestResults("PAPA-152");
       assert.deepStrictEqual(testPlan, {

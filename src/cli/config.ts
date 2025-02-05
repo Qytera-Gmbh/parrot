@@ -1,22 +1,17 @@
-import { readFileSync } from "fs";
-import path from "path";
-import type { Drain } from "../drains/drain.js";
 import type { Source } from "../sources/source.js";
 import { TestPlanSourceHandler } from "../sources/xray/xray-test-plan-source-handler.js";
-import type { TestPlanSourceOptions } from "../sources/xray/xray-test-plan-source.js";
-import { TestPlanSource } from "../sources/xray/xray-test-plan-source.js";
+import type { SourceHandler } from "./cli-source-handler.js";
 
-export type Provider<T, C> = (
-  config?: C
-) => { config: C; provider: T } | Promise<{ config: C; provider: T }>;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type AnySourceHandler = SourceHandler<Source<any, any>, any, any>;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface LookupTable<T> {
   [key: string]: LookupTable<T> | T;
 }
 
 export interface ParrotConfiguration {
-  drains: LookupTable<Provider<Drain<unknown>, unknown>>;
-  sources: LookupTable<Provider<Source<unknown>, unknown>>;
+  sources: LookupTable<AnySourceHandler>;
 }
 
 export function getConfiguration(): ParrotConfiguration {
@@ -30,17 +25,9 @@ export async function configureParrot(
 }
 
 let parrotConfiguration: ParrotConfiguration = {
-  drains: {},
   sources: {
     ["xray"]: {
-      ["test plan"]: async (config?: string) => {
-        if (path) {
-          return new TestPlanSource(
-            JSON.parse(readFileSync(path, "utf-8")) as TestPlanSourceOptions
-          );
-        }
-        return new TestPlanSource(await new TestPlanSourceHandler().parse());
-      },
+      ["test plan"]: new TestPlanSourceHandler(),
     },
   },
 };
