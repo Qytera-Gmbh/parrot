@@ -55,7 +55,6 @@ if (OPTIONS.pluginFile) {
 }
 
 const SOURCE = await getSource(OPTIONS);
-console.log("source", SOURCE);
 
 async function getSource(options: ProgramOptions) {
   if (!options.configFile) {
@@ -63,7 +62,7 @@ async function getSource(options: ProgramOptions) {
       message: "Please select your source:",
     });
     const source = await result.handler.buildSource();
-    const parameters = result.handler.buildSourceParameters();
+    const parameters = await result.handler.buildSourceParameters();
     const confirmation = await confirm({
       message: "Would you like to save your configuration for later use?",
     });
@@ -73,9 +72,9 @@ async function getSource(options: ProgramOptions) {
         message: "Please specify the file to write the configuration to:",
       });
       const serializedSource: SerializedSource = {
-        parameters: result.handler.serializeSourceParameters(parameters),
+        parameters: await result.handler.serializeSourceParameters(parameters),
         selections: result.selections,
-        source: result.handler.serializeSource(source),
+        source: await result.handler.serializeSource(source),
       };
       await writeFile(path, JSON.stringify(serializedSource));
     }
