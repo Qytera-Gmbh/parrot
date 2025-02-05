@@ -1,10 +1,5 @@
-import type { Source } from "../sources/source.js";
 import { TestPlanSourceHandler } from "../sources/xray/xray-test-plan-source-handler.js";
-import type { SourceHandler } from "./cli-source-handler.js";
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export type AnySourceHandler = SourceHandler<Source<any, any>, any, any>;
-/* eslint-enable @typescript-eslint/no-explicit-any */
+import type { AnySourceHandler } from "./cli-source-handler.js";
 
 export interface LookupTable<T> {
   [key: string]: LookupTable<T> | T;
@@ -14,10 +9,21 @@ export interface ParrotConfiguration {
   sources: LookupTable<AnySourceHandler>;
 }
 
-export function getConfiguration(): ParrotConfiguration {
-  return parrotConfiguration;
+/**
+ * Returns the lookup table of source handlers currently registered with Pass Parrot.
+ *
+ * @returns the lookup table of source handlers
+ */
+export function getRegisteredSources(): LookupTable<AnySourceHandler> {
+  return parrotConfiguration.sources;
 }
 
+/**
+ * Modifies Pass Parrot's configuration through a callback whose result will replace the current
+ * configuration. The callback's only parameter is the current configuration.
+ *
+ * @param callback the callback which returns the new configuration
+ */
 export async function configureParrot(
   callback: (config: ParrotConfiguration) => ParrotConfiguration | Promise<ParrotConfiguration>
 ) {
