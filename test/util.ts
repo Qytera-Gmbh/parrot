@@ -40,14 +40,12 @@ export function getEnv(
     | "microsoft-teams-webhook-url"
     | "xray-client-id"
     | "xray-client-secret"
+    | "xray-url"
 ): string {
   let value: string | undefined;
   switch (kind) {
-    case "xray-client-id":
-      value = process.env.XRAY_CLIENT_ID;
-      break;
-    case "xray-client-secret":
-      value = process.env.XRAY_CLIENT_SECRET;
+    case "jira-email":
+      value = process.env.JIRA_EMAIL;
       break;
     case "jira-password":
       value = process.env.JIRA_PASSWORD;
@@ -55,17 +53,23 @@ export function getEnv(
     case "jira-token":
       value = process.env.JIRA_TOKEN;
       break;
-    case "jira-email":
-      value = process.env.JIRA_EMAIL;
+    case "jira-url":
+      value = process.env.JIRA_URL;
       break;
     case "jira-username":
       value = process.env.JIRA_USERNAME;
       break;
-    case "jira-url":
-      value = process.env.JIRA_URL;
-      break;
     case "microsoft-teams-webhook-url":
       value = process.env.MICROSOFT_TEAMS_WEBHOOK_URL;
+      break;
+    case "xray-client-id":
+      value = process.env.XRAY_CLIENT_ID;
+      break;
+    case "xray-client-secret":
+      value = process.env.XRAY_CLIENT_SECRET;
+      break;
+    case "xray-url":
+      value = process.env.XRAY_URL;
       break;
   }
   if (!value) {

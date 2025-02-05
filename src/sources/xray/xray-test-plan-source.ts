@@ -6,44 +6,33 @@ import type { ProjectDetails } from "jira.js/out/version3/models/index.js";
 import type { SearchForIssuesUsingJqlPost } from "jira.js/out/version3/parameters/index.js";
 import type { Test } from "../../models/test-model.js";
 import type { TestResults } from "../../models/test-results-model.js";
-import type { Source } from "../source.js";
+import { Source } from "../source.js";
 import { convertStatus } from "./xray-status.js";
 
 /**
  * The Xray test plan source is responsible for fetching test report data from
  * [Xray](https://www.getxray.app/) test plans.
  */
-export class TestPlanSource implements Source<string> {
-  private readonly config: TestPlanSourceOptions;
-
-  /**
-   * Constructs a new Xray source based on the provided options.
-   *
-   * @param config the source configuration
-   */
-  constructor(config: TestPlanSourceOptions) {
-    this.config = config;
-  }
-
+export class TestPlanSource extends Source<TestPlanSourceOptions, string> {
   /**
    * Retrieves a test plan from the Xray API.
    *
    * @param testPlanKey the test plan to retrieve
    */
   public async getTestResults(testPlanKey: string): Promise<TestResults> {
-    if (this.config.xray.client instanceof XrayClientServer) {
+    if (this.configuration.xray.client instanceof XrayClientServer) {
       return TestPlanSource.getTestPlanServer({
-        jiraClient: this.config.jira.client,
+        jiraClient: this.configuration.jira.client,
         testPlanKey: testPlanKey,
-        url: this.config.jira.url,
-        xrayClient: this.config.xray.client,
+        url: this.configuration.jira.url,
+        xrayClient: this.configuration.xray.client,
       });
     } else {
       return TestPlanSource.getTestPlanCloud({
-        jiraClient: this.config.jira.client,
+        jiraClient: this.configuration.jira.client,
         testPlanKey: testPlanKey,
-        url: this.config.jira.url,
-        xrayClient: this.config.xray.client,
+        url: this.configuration.jira.url,
+        xrayClient: this.configuration.xray.client,
       });
     }
   }
@@ -222,8 +211,13 @@ export class TestPlanSource implements Source<string> {
 
 export interface TestPlanSourceOptions {
   jira: {
+    authentication: "basic" | "oauth2" | "pat";
     client: Version2Client | Version3Client;
     url: string;
   };
-  xray: { client: XrayClientCloud | XrayClientServer };
+  xray: {
+    authentication: "basic" | "oauth2" | "pat";
+    client: XrayClientCloud | XrayClientServer;
+    url: string;
+  };
 }

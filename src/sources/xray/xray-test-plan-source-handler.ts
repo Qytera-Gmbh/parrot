@@ -1,26 +1,28 @@
 import { input, select } from "@inquirer/prompts";
 import { XrayClientCloud, XrayClientServer } from "@qytera/xray-client";
-import { Version3Client } from "jira.js";
+import { Version2Client, Version3Client } from "jira.js";
 import { getEnv } from "../../../test/util.js";
-import type { SourceHandler } from "../../cli/cli-source-handler.js";
+import { SourceHandler } from "../../cli/cli-source-handler.js";
 import { TestPlanSource } from "./xray-test-plan-source.js";
 
-export interface StoredConfiguration {
+interface StoredConfiguration {
   jira: {
     authentication: "basic" | "oauth2" | "pat";
+    kind: "version-2" | "version-3";
     url: string;
   };
-  testPlanKey: string;
   xray: {
-    authentication: "basic" | "client-credentials" | "pat";
+    authentication: "basic" | "oauth2" | "pat";
     kind: "cloud" | "server";
     url: string;
   };
 }
 
-export class TestPlanSourceHandler
-  implements SourceHandler<TestPlanSource, StoredConfiguration, string>
-{
+export class TestPlanSourceHandler extends SourceHandler<
+  TestPlanSource,
+  StoredConfiguration,
+  string
+> {
   public async buildSource(): Promise<TestPlanSource> {
     console.log("Welcome to the Node.js CLI tool!");
 
@@ -37,9 +39,25 @@ export class TestPlanSourceHandler
     return await Promise.reject(new Error("Method not implemented."));
   }
 
-  public restoreSource(savedConfiguration: StoredConfiguration): TestPlanSource {
+  public serializeSource(source: TestPlanSource): StoredConfiguration {
+    const config = source.getConfiguration();
+    return {
+      jira: {
+        authentication: config.jira.authentication,
+        kind: config.jira.client instanceof Version2Client ? "version-2" : "version-3",
+        url: config.jira.url,
+      },
+      xray: {
+        authentication: config.xray.authentication,
+        kind: config.xray.client instanceof XrayClientCloud ? "cloud" : "server",
+        url: config.xray.url,
+      },
+    };
+  }
+
+  public deserializeSource(serializedSource: StoredConfiguration): TestPlanSource {
     let jiraCredentials;
-    switch (savedConfiguration.jira.authentication) {
+    switch (serializedSource.jira.authentication) {
       case "basic":
         jiraCredentials = {
           basic: { apiToken: getEnv("jira-token"), email: getEnv("jira-email") },
@@ -53,14 +71,14 @@ export class TestPlanSourceHandler
         break;
     }
     let xrayCredentials;
-    switch (savedConfiguration.xray.authentication) {
+    switch (serializedSource.xray.authentication) {
       case "basic":
         xrayCredentials = {
           password: getEnv("jira-password"),
           username: getEnv("jira-username"),
         };
         break;
-      case "client-credentials":
+      case "oauth2":
         xrayCredentials = {
           clientId: getEnv("xray-client-id"),
           clientSecret: getEnv("xray-client-secret"),
@@ -72,34 +90,71 @@ export class TestPlanSourceHandler
         };
         break;
     }
+    let jiraClient;
+    switch (serializedSource.jira.kind) {
+      case "version-2":
+        jiraClient = new Version2Client({
+          authentication: jiraCredentials,
+          host: serializedSource.jira.url,
+        });
+        break;
+      case "version-3":
+        jiraClient = new Version3Client({
+          authentication: jiraCredentials,
+          host: serializedSource.jira.url,
+        });
+        break;
+    }
     let xrayClient;
-    switch (savedConfiguration.xray.kind) {
+    switch (serializedSource.xray.kind) {
       case "cloud":
         xrayClient = new XrayClientCloud({
           credentials: xrayCredentials,
-          url: savedConfiguration.xray.url,
+          url: serializedSource.xray.url,
         });
         break;
       case "server":
         xrayClient = new XrayClientServer({
           credentials: xrayCredentials,
-          url: savedConfiguration.xray.url,
+          url: serializedSource.xray.url,
         });
         break;
     }
     return new TestPlanSource({
       jira: {
-        client: new Version3Client({
-          authentication: jiraCredentials,
-          host: savedConfiguration.jira.url,
-        }),
-        url: savedConfiguration.jira.url,
+        authentication: serializedSource.jira.authentication,
+        client: jiraClient,
+        url: serializedSource.jira.url,
       },
-      xray: { client: xrayClient },
+      xray: {
+        authentication: serializedSource.xray.authentication,
+        client: xrayClient,
+        url: serializedSource.xray.url,
+      },
     });
   }
 
-  public restoreSourceParameters(savedParameters: string): [testPlanKey: string] {
-    return [savedParameters];
+  public async buildSourceParameters(): Promise<[testPlanKey: string]> {
+    console.log("Welcome to the Node.js CLI tool!");
+
+    const name = await input({
+      message: "What is your name?",
+    });
+
+    const choice = await select<string>({
+      choices: ["Option 1", "Option 2", "Option 3"],
+      message: "Choose an option:",
+    });
+
+    console.log(`Hello, ${name}! You selected: ${choice}`);
+    return await Promise.reject(new Error("Method not implemented."));
+  }
+
+  public serializeSourceParameters(testPlanKey: string): string {
+    return testPlanKey;
+  }
+
+  public deserializeSourceParameters(serializedParameters: string): [testPlanKey: string] {
+    return [serializedParameters];
   }
 }
