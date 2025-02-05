@@ -3,13 +3,13 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { JIRA_CLIENT_CLOUD, XRAY_CLIENT_CLOUD } from "../../../test/clients.js";
 import { getEnv } from "../../../test/util.js";
-import { XraySource } from "./xray-test-plan-source.js";
+import { TestPlanSource } from "./xray-test-plan-source.js";
 
 describe(path.relative(process.cwd(), import.meta.filename), () => {
   describe("xray cloud", () => {
     it("returns test plan data", async () => {
       const url = getEnv("jira-url");
-      const source = new XraySource({
+      const source = new TestPlanSource({
         jira: { client: JIRA_CLIENT_CLOUD, url: url },
         xray: { client: XRAY_CLIENT_CLOUD },
       });

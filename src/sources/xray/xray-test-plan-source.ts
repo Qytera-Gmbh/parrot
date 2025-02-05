@@ -13,15 +13,15 @@ import { convertStatus } from "./xray-status.js";
  * The Xray test plan source is responsible for fetching test report data from
  * [Xray](https://www.getxray.app/) test plans.
  */
-export class XraySource implements Source<string> {
-  private readonly config: XraySourceOptions;
+export class TestPlanSource implements Source<string> {
+  private readonly config: TestPlanSourceOptions;
 
   /**
    * Constructs a new Xray source based on the provided options.
    *
    * @param config the source configuration
    */
-  constructor(config: XraySourceOptions) {
+  constructor(config: TestPlanSourceOptions) {
     this.config = config;
   }
 
@@ -32,14 +32,14 @@ export class XraySource implements Source<string> {
    */
   public async getTestResults(testPlanKey: string): Promise<TestResults> {
     if (this.config.xray.client instanceof XrayClientServer) {
-      return XraySource.getTestPlanServer({
+      return TestPlanSource.getTestPlanServer({
         jiraClient: this.config.jira.client,
         testPlanKey: testPlanKey,
         url: this.config.jira.url,
         xrayClient: this.config.xray.client,
       });
     } else {
-      return XraySource.getTestPlanCloud({
+      return TestPlanSource.getTestPlanCloud({
         jiraClient: this.config.jira.client,
         testPlanKey: testPlanKey,
         url: this.config.jira.url,
@@ -220,7 +220,7 @@ export class XraySource implements Source<string> {
   }
 }
 
-export interface XraySourceOptions {
+export interface TestPlanSourceOptions {
   jira: {
     client: Version2Client | Version3Client;
     url: string;

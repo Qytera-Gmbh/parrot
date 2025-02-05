@@ -41,14 +41,15 @@
     "typescript-eslint": "^8.31.1"
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.3.1",
     "@qytera/xray-client": "^4.0.0",
     "adaptivecards": "3.0.4",
     "canvas": "^3.1.0",
+    "commander": "^13.1.0",
+    "cosmiconfig": "^9.0.0",
     "jira.js": "^4.0.6"
   },
-  "//": "========================================================================================",
-  "//": "adaptivecards: https://github.com/microsoft/AdaptiveCards/issues/8319#issuecomment-2067556174",
-  "//": "========================================================================================",
+  "// adaptivecards/swiper": "see https://github.com/microsoft/AdaptiveCards/issues/8319#issuecomment-2067556174",
   "overrides": {
     "adaptivecards": {
       "swiper": "^6.0.0"
