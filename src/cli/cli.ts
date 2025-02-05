@@ -77,7 +77,7 @@ async function getSource(options: ProgramOptions) {
         selections: result.selections,
         source: await result.handler.serializeSource(source),
       };
-      await writeFile(path, JSON.stringify(serializedSource));
+      await writeFile(path, JSON.stringify(serializedSource, null, 2));
     }
     return { parameters, source };
   } else {
