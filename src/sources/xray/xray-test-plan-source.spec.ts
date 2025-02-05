@@ -12,7 +12,7 @@ describe(path.relative(process.cwd(), import.meta.filename), () => {
       const source = new TestPlanSource({
         jira: { authentication: "basic", client: JIRA_CLIENT_CLOUD, url: url },
         xray: {
-          authentication: "oauth2",
+          authentication: "client-credentials",
           client: XRAY_CLIENT_CLOUD,
           url: getEnv("xray-url"),
         },
