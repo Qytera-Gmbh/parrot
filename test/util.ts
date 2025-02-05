@@ -24,24 +24,34 @@ export function findFiles(dir: string, filter: (filename: string) => boolean): s
   return testFiles;
 }
 
+type EnvironmentVariable =
+  | "jira-email"
+  | "jira-password"
+  | "jira-token"
+  | "jira-url"
+  | "jira-username"
+  | "microsoft-teams-webhook-url"
+  | "xray-client-id"
+  | "xray-client-secret"
+  | "xray-url";
+
 /**
- * Returns an environment variable value for a specified environment variable.
+ * Returns an environment variable value for a specified environment variable. Throws an error if
+ * the variable has not been set.
  *
  * @param kind the environment variable
  * @returns the value
  */
-export function getEnv(
-  kind:
-    | "jira-email"
-    | "jira-password"
-    | "jira-token"
-    | "jira-url"
-    | "jira-username"
-    | "microsoft-teams-webhook-url"
-    | "xray-client-id"
-    | "xray-client-secret"
-    | "xray-url"
-): string {
+export function getEnv(kind: EnvironmentVariable): string;
+
+/**
+ * Returns an environment variable value for a specified environment variable.
+ *
+ * @param kind the environment variable
+ * @returns the value or `undefined` if it has not been set
+ */
+export function getEnv(kind: EnvironmentVariable, throwIfMissing: false): string | undefined;
+export function getEnv(kind: EnvironmentVariable, throwIfMissing?: false): string | undefined {
   let value: string | undefined;
   switch (kind) {
     case "jira-email":
@@ -72,7 +82,7 @@ export function getEnv(
       value = process.env.XRAY_URL;
       break;
   }
-  if (!value) {
+  if (throwIfMissing !== false && !value) {
     throw new Error(`Environment variable is undefined: ${kind}`);
   }
   return value;

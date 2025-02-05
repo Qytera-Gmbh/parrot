@@ -37,9 +37,11 @@ export class TestPlanSourceHandler extends SourceHandler<
       message: "Are you using Jira/Xray Server/DC or Cloud?",
     });
     const isServer = serverOrCloud === "server";
-    const jiraUrl = await input({
-      message: `What is the base URL of your Jira instance (e.g. ${isServer ? "https://example-jira.com" : "https://example.atlassian.net"})?`,
-    });
+    const jiraUrl =
+      getEnv("jira-url", false) ??
+      (await input({
+        message: `What is the base URL of your Jira instance (e.g. ${isServer ? "https://example-jira.com" : "https://example.atlassian.net"})?`,
+      }));
     const xrayUrl = isServer
       ? jiraUrl
       : await select<string>({
@@ -67,23 +69,31 @@ export class TestPlanSourceHandler extends SourceHandler<
         if (isServer) {
           jiraAuthentication = {
             basic: {
-              password: await password({
-                message: "Please enter your Jira password:",
-              }),
-              username: await input({
-                message: "Please enter your Jira username:",
-              }),
+              password:
+                getEnv("jira-password", false) ??
+                (await password({
+                  message: "Please enter your Jira password:",
+                })),
+              username:
+                getEnv("jira-username", false) ??
+                (await input({
+                  message: "Please enter your Jira username:",
+                })),
             },
           };
         } else {
           jiraAuthentication = {
             basic: {
-              apiToken: await password({
-                message: "Please enter your Jira personal access token:",
-              }),
-              email: await input({
-                message: "Please enter your Jira email address:",
-              }),
+              apiToken:
+                getEnv("jira-token", false) ??
+                (await password({
+                  message: "Please enter your Jira personal access token:",
+                })),
+              email:
+                getEnv("jira-email", false) ??
+                (await input({
+                  message: "Please enter your Jira email address:",
+                })),
             },
           };
         }
@@ -91,17 +101,21 @@ export class TestPlanSourceHandler extends SourceHandler<
       case "oauth2":
         jiraAuthentication = {
           oauth2: {
-            accessToken: await password({
-              message: "Please enter your Jira personal access token:",
-            }),
+            accessToken:
+              getEnv("jira-token", false) ??
+              (await password({
+                message: "Please enter your Jira personal access token:",
+              })),
           },
         };
         break;
       case "pat":
         jiraAuthentication = {
-          personalAccessToken: await password({
-            message: "Please enter your Jira personal access token:",
-          }),
+          personalAccessToken:
+            getEnv("jira-token", false) ??
+            (await password({
+              message: "Please enter your Jira personal access token:",
+            })),
         };
         break;
     }
@@ -113,32 +127,44 @@ export class TestPlanSourceHandler extends SourceHandler<
     switch (xrayAuthenticationChoice) {
       case "basic":
         xrayAuthentication = {
-          password: await password({
-            message: "Please enter your Jira password:",
-          }),
-          username: await input({
-            message: "Please enter your Jira username:",
-          }),
+          password:
+            getEnv("jira-password", false) ??
+            (await password({
+              message: "Please enter your Jira password:",
+            })),
+          username:
+            getEnv("jira-username", false) ??
+            (await input({
+              message: "Please enter your Jira username:",
+            })),
         };
         break;
       case "client-credentials":
         xrayAuthentication = {
-          clientId: await input({
-            message: "Please enter your Xray client ID:",
-          }),
-          clientSecret: await password({
-            message: "Please enter your Xray client secret:",
-          }),
+          clientId:
+            getEnv("xray-client-id", false) ??
+            (await input({
+              message: "Please enter your Xray client ID:",
+            })),
+          clientSecret:
+            getEnv("xray-client-secret", false) ??
+            (await password({
+              message: "Please enter your Xray client secret:",
+            })),
         };
         break;
       case "pat":
         xrayAuthentication = {
-          token: await password({
-            message: "Please enter your Jira personal access token:",
-          }),
-          username: await input({
-            message: "Please enter your Jira username:",
-          }),
+          token:
+            getEnv("jira-token", false) ??
+            (await password({
+              message: "Please enter your Jira personal access token:",
+            })),
+          username:
+            getEnv("jira-username", false) ??
+            (await input({
+              message: "Please enter your Jira username:",
+            })),
         };
         break;
     }
