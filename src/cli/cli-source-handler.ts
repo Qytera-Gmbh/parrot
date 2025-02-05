@@ -1,5 +1,9 @@
 import type { Source } from "../sources/source.js";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type AnySourceHandler = SourceHandler<Source<any, any>, any, any>;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 /**
  * A source handler is responsible for building a source from scratch and for restoring sources from
  * partial configurations. It is also responsible for restoring method parameters, such that a

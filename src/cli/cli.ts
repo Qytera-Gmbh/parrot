@@ -3,9 +3,9 @@ import { Command } from "commander";
 import { defaultLoaders } from "cosmiconfig";
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+import type { AnySourceHandler } from "./cli-source-handler.js";
 import { SourceHandler } from "./cli-source-handler.js";
-import type { AnySourceHandler } from "./config.js";
-import { getConfiguration, type LookupTable } from "./config.js";
+import { getRegisteredSources, type LookupTable } from "./config.js";
 
 import "dotenv/config";
 
@@ -59,7 +59,7 @@ console.log("Source is now ready to use:", SOURCE);
 
 async function getSource(options: ProgramOptions) {
   if (!options.configFile) {
-    const result = await descendIntoTable(getConfiguration().sources, {
+    const result = await descendIntoTable(getRegisteredSources(), {
       message: "Please select your source:",
     });
     const source = await result.handler.buildSource();
@@ -84,7 +84,7 @@ async function getSource(options: ProgramOptions) {
     const serializedSource = JSON.parse(
       await readFile(options.configFile, "utf-8")
     ) as SerializedSource;
-    const handler = retrieveFromTable(getConfiguration().sources, serializedSource.selections);
+    const handler = retrieveFromTable(getRegisteredSources(), serializedSource.selections);
     const source = await handler.deserializeSource(serializedSource.source);
     const parameters = await handler.deserializeSourceParameters(serializedSource.parameters);
     return { parameters, source };
