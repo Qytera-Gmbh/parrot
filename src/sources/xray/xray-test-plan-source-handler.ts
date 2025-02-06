@@ -6,8 +6,8 @@ import { getEnv } from "../../util/env.js";
 import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-source.js";
 import {
   JIRA_AUTHENTICATION,
-  TestPlanSource,
   XRAY_AUTHENTICATION,
+  XrayTestPlanSource,
 } from "./xray-test-plan-source.js";
 
 const JIRA_API_VERSION = ["version-2", "version-3"] as const;
@@ -26,12 +26,12 @@ interface StoredConfiguration {
   };
 }
 
-export class TestPlanSourceHandler extends SourceHandler<
-  TestPlanSource,
+export class XrayTestPlanSourceHandler extends SourceHandler<
+  XrayTestPlanSource,
   StoredConfiguration,
   string
 > {
-  public async buildSource(): Promise<TestPlanSource> {
+  public async buildSource(): Promise<XrayTestPlanSource> {
     const serverOrCloud = await select<"cloud" | "server">({
       choices: ["server", "cloud"],
       message: "Are you using Jira/Xray Server/DC or Cloud?",
@@ -168,7 +168,7 @@ export class TestPlanSourceHandler extends SourceHandler<
         };
         break;
     }
-    return new TestPlanSource({
+    return new XrayTestPlanSource({
       jira: {
         authentication: jiraAuthenticationChoice,
         client:
@@ -190,7 +190,7 @@ export class TestPlanSourceHandler extends SourceHandler<
     });
   }
 
-  public serializeSource(source: TestPlanSource): StoredConfiguration {
+  public serializeSource(source: XrayTestPlanSource): StoredConfiguration {
     const config = source.getConfiguration();
     return {
       jira: {
@@ -206,7 +206,7 @@ export class TestPlanSourceHandler extends SourceHandler<
     };
   }
 
-  public deserializeSource(serializedSource: StoredConfiguration): TestPlanSource {
+  public deserializeSource(serializedSource: StoredConfiguration): XrayTestPlanSource {
     let jiraCredentials;
     switch (serializedSource.jira.authentication) {
       case "basic":
@@ -271,7 +271,7 @@ export class TestPlanSourceHandler extends SourceHandler<
         });
         break;
     }
-    return new TestPlanSource({
+    return new XrayTestPlanSource({
       jira: {
         authentication: serializedSource.jira.authentication,
         client: jiraClient,

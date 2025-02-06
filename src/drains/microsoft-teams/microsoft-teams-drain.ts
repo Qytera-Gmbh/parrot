@@ -12,11 +12,14 @@ export class MicrosoftTeamsDrain implements Drain<AdaptiveCardMessage> {
 
   public async writeTestResults(results: TestResults): Promise<AdaptiveCardMessage> {
     const card = getTestResultsCard(results, { ["ID"]: results.id, ["Name"]: results.name });
-    await fetch(this.incomingWebhookUrl, {
+    const response = await fetch(this.incomingWebhookUrl, {
       body: JSON.stringify(card),
       headers: { ["Content-Type"]: "application/json" },
       method: "POST",
     });
+    if (response.status !== 200) {
+      console.log(await response.text());
+    }
     return card;
   }
 }
