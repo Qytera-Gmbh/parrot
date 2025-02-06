@@ -1,6 +1,6 @@
 import { XrayClientCloud } from "@qytera/xray-client";
 import { Version3Client } from "jira.js";
-import { getEnv } from "./util.js";
+import { getEnv } from "../src/util/env.js";
 
 export const XRAY_CLIENT_CLOUD = new XrayClientCloud({
   credentials: {
