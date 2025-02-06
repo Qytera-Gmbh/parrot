@@ -1,8 +1,8 @@
 import { input, password, select } from "@inquirer/prompts";
 import { XrayClientCloud, XrayClientServer } from "@qytera/xray-client";
 import { Version2Client, Version3Client } from "jira.js";
-import { getEnv } from "../../../test/util.js";
 import { SourceHandler } from "../../cli/cli-source-handler.js";
+import { getEnv } from "../../util/env.js";
 import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-source.js";
 import {
   JIRA_AUTHENTICATION,
