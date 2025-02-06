@@ -3,9 +3,9 @@ import { Command } from "commander";
 import { defaultLoaders } from "cosmiconfig";
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+import { getRegisteredSources, type LookupTable } from "./cli-config.js";
 import type { AnySourceHandler } from "./cli-source-handler.js";
 import { SourceHandler } from "./cli-source-handler.js";
-import { getRegisteredSources, type LookupTable } from "./config.js";
 
 import "dotenv/config";
 
