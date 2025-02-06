@@ -1,18 +1,15 @@
 import type { TestResults } from "../../models/test-results-model.js";
-import type { Drain } from "../drain.js";
-import type { AdaptiveCardMessage } from "./cards.js";
-import { getTestResultsCard } from "./cards.js";
+import { Drain } from "../drain.js";
+import type { AdaptiveCardMessage } from "./microsoft-teams-cards.js";
+import { getTestResultsCard } from "./microsoft-teams-cards.js";
 
-export class MicrosoftTeamsDrain implements Drain<AdaptiveCardMessage> {
-  private readonly incomingWebhookUrl: string;
-
-  constructor(config: { incomingWebhookUrl: string }) {
-    this.incomingWebhookUrl = config.incomingWebhookUrl;
-  }
-
+export class MicrosoftTeamsDrain extends Drain<
+  { incomingWebhookUrl: string },
+  AdaptiveCardMessage
+> {
   public async writeTestResults(results: TestResults): Promise<AdaptiveCardMessage> {
     const card = getTestResultsCard(results, { ["ID"]: results.id, ["Name"]: results.name });
-    const response = await fetch(this.incomingWebhookUrl, {
+    const response = await fetch(this.configuration.incomingWebhookUrl, {
       body: JSON.stringify(card),
       headers: { ["Content-Type"]: "application/json" },
       method: "POST",
