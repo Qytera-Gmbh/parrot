@@ -1,6 +1,6 @@
 <h1>
   <span>
-    Pass Parrot
+    Parrot
     <img width="4%" src="docs/icon.svg" alt="Pass Parrot Logo" />
   </span>
 </h1>
