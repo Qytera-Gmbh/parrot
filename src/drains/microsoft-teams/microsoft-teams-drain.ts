@@ -4,12 +4,16 @@ import type { AdaptiveCardMessage } from "./microsoft-teams-cards.js";
 import { getTestResultsCard } from "./microsoft-teams-cards.js";
 
 export class MicrosoftTeamsDrain extends Drain<
-  { incomingWebhookUrl: string },
+  unknown,
+  MicrosoftTeamsDrainDetails,
   AdaptiveCardMessage
 > {
-  public async writeTestResults(results: TestResults): Promise<AdaptiveCardMessage> {
+  public async writeTestResults(
+    results: TestResults,
+    details: MicrosoftTeamsDrainDetails
+  ): Promise<AdaptiveCardMessage> {
     const card = getTestResultsCard(results, { ["ID"]: results.id, ["Name"]: results.name });
-    const response = await fetch(this.configuration.incomingWebhookUrl, {
+    const response = await fetch(details.incomingWebhookUrl, {
       body: JSON.stringify(card),
       headers: { ["Content-Type"]: "application/json" },
       method: "POST",
@@ -19,4 +23,11 @@ export class MicrosoftTeamsDrain extends Drain<
     }
     return card;
   }
+}
+
+/**
+ * The details of a Microsoft Teams drain where test results can be written to.
+ */
+export interface MicrosoftTeamsDrainDetails {
+  incomingWebhookUrl: string;
 }
