@@ -71,6 +71,10 @@ Options:
 
 Source and drain configurations can be saved to files for later reuse, speeding up subsequent Parrot runs.
 
+> [!NOTE]
+> Note that sensitive values such as usernames or passwords are not stored in the configuration files.
+> Which values to save and which to omit is baked into the source and drain implementations.
+
 ## Example: Xray → Microsoft Teams
 
 Initial setup:
