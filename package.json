@@ -35,7 +35,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.0",
-    "dotenv": "^16.4.7",
     "eslint": "^9.26.0",
     "eslint-plugin-perfectionist": "^4.12.3",
     "prettier": "^3.5.3",
@@ -44,13 +43,17 @@
     "typescript-eslint": "^8.31.1"
   },
   "dependencies": {
-    "@inquirer/prompts": "^7.3.1",
     "@qytera/xray-client": "^4.0.0",
     "adaptivecards": "3.0.4",
     "canvas": "^3.1.0",
     "commander": "^13.1.0",
     "cosmiconfig": "^9.0.0",
     "jira.js": "^4.0.6"
+  },
+  "peerDependencies": {
+    "@inquirer/prompts": ">=7.0.0",
+    "dotenv": ">=12.0.0",
+    "swiper": "^6.0.0"
   },
   "// adaptivecards/swiper": "see https://github.com/microsoft/AdaptiveCards/issues/8319#issuecomment-2067556174",
   "overrides": {
