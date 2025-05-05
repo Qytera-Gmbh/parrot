@@ -84,3 +84,57 @@ https://github.com/user-attachments/assets/e789b9a5-5150-41ac-bad0-1757c069a646
 Setup with reused source configuration:
 
 https://github.com/user-attachments/assets/263ee870-59c3-4922-a964-e4fbd8b8b27c
+
+# Custom Plugins
+
+Parrot was designed with extensibility in mind.
+You can easily add your own logic using the `--plugin-file` CLI parameter.
+This allows you to register your own data sources or behaviours at runtime.
+
+To load one or more plugin files, simply pass them when running the CLI:
+
+```sh
+npx parrot --plugin-file ./my-source.js ./another-plugin.ts
+```
+
+Each plugin should call `configureParrot()` to hook into the system.
+
+```js
+import { configureParrot } from "@qytera/parrot";
+
+await configureParrot((config) => {
+  return {
+    sources: {
+      ["some other service"]: {
+        ["nested source"]: new MyNewNestedSourceHandler(),
+      },
+    },
+    drains: {
+      ["my new drain"]: new MyNewDrainHandler(),
+    },
+  };
+});
+```
+
+You can define top-level or nested sources, depending on your use case.
+All plugins are merged together, allowing modular composition of features.
+
+## Implementation
+
+> [!NOTE]
+> Parrot comes with a number of built-in plugins that you can use as a reference.
+> Check out the [`src/plugins`](./src/cli/plugins/) directory in the repository to see how existing sources and drains are implemented in practice.
+
+When implementing a new plugin, you'll need to extend the following abstract classes to define how data is fetched and where it is sent:
+
+- Custom Sources
+
+  - [`Source`](./src/sources/source.ts): Responsible for fetching the actual test results from a source.
+  - [`SourceHandler`](./src/cli/cli-source-handler.ts): Responsible for building the source configuration (e.g. via CLI prompts) and instantiating the actual source.
+
+- Custom Drains
+
+  - [`Drain`](./src/drains/drain.ts): Responsible for writing the test summary to a drain (e.g. a reporting system, file, or API).
+  - [`DrainHandler`](./src/cli/cli-drain-handler.ts): Responsible for building the drain configuration (e.g. via CLI prompts) and instantiating the actual drain.
+
+Each of these base classes provides the necessary structure and lifecycle hooks to ensure that your plugin integrates cleanly into the Parrot runtime.
