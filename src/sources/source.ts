@@ -4,18 +4,18 @@ import type { TestResults } from "../models/test-results-model.js";
  * A source represents a service or tool from which test information can be pulled, such as an Xray
  * test execution, an Azure DevOps test run or a simple Excel sheet.
  */
-export abstract class Source<ConfigurationType, SourceDetails> {
+export abstract class Source<Configuration, SourceDetails> {
   /**
    * The source configuration. It is used during serialization and deserialization of the source.
    */
-  protected readonly configuration: ConfigurationType;
+  protected readonly configuration: Configuration;
 
   /**
    * Constructs a new source based on the configuration provided.
    *
    * @param configuration the source configuration
    */
-  constructor(configuration: ConfigurationType) {
+  constructor(configuration: Configuration) {
     this.configuration = configuration;
   }
 
@@ -24,7 +24,7 @@ export abstract class Source<ConfigurationType, SourceDetails> {
    *
    * @returns the configuration
    */
-  public getConfiguration(): ConfigurationType {
+  public getConfiguration(): Readonly<Configuration> {
     return this.configuration;
   }
 

@@ -1,10 +1,5 @@
 import type { Source } from "../sources/source.js";
 
-// We use any here because I have no idea how to type/infer all the different source types.
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export type AnySourceHandler = SourceHandler<Source<any, any>, any, any>;
-/* eslint-enable @typescript-eslint/no-explicit-any */
-
 /**
  * A source handler is responsible for building a source from scratch and for restoring sources from
  * partial configurations. It is also responsible for restoring method parameters, such that a
@@ -12,8 +7,8 @@ export type AnySourceHandler = SourceHandler<Source<any, any>, any, any>;
  */
 export abstract class SourceHandler<
   S extends Source<unknown, unknown>,
-  SerializedSourceType,
-  SerializedParametersType = Parameters<S["getTestResults"]>,
+  SerializedSourceConfiguration,
+  SerializedParameters = Parameters<S["getTestResults"]>[0],
 > {
   /**
    * Creates and returns a fully initialised source instance. The source can be generated from
@@ -36,7 +31,9 @@ export abstract class SourceHandler<
    * @param source the source instance to serialize
    * @returns the JSON-serializable serialized source
    */
-  public abstract serializeSource(source: S): Promise<SerializedSourceType> | SerializedSourceType;
+  public abstract serializeSource(
+    source: S
+  ): Promise<SerializedSourceConfiguration> | SerializedSourceConfiguration;
 
   /**
    * Restores a source instance from a previously serialized configuration. The returned
@@ -49,7 +46,9 @@ export abstract class SourceHandler<
    * @param serializedSource the serialized source
    * @returns the restored source
    */
-  public abstract deserializeSource(serializedSource: SerializedSourceType): Promise<S> | S;
+  public abstract deserializeSource(
+    serializedSource: SerializedSourceConfiguration
+  ): Promise<S> | S;
 
   /**
    * Constructs and returns the parameters required for retrieving test results. Parameters can be
@@ -59,8 +58,8 @@ export abstract class SourceHandler<
    * @returns the parameters
    */
   public abstract buildSourceParameters():
-    | Parameters<S["getTestResults"]>
-    | Promise<Parameters<S["getTestResults"]>>;
+    | Parameters<S["getTestResults"]>[0]
+    | Promise<Parameters<S["getTestResults"]>[0]>;
 
   /**
    * Serializes the given source retrieval parameters into a format suitable for storage. The result
@@ -75,8 +74,8 @@ export abstract class SourceHandler<
    * @returns the JSON-serializable parameters
    */
   public abstract serializeSourceParameters(
-    ...parameters: Parameters<S["getTestResults"]>
-  ): Promise<SerializedParametersType> | SerializedParametersType;
+    parameters: Parameters<S["getTestResults"]>[0]
+  ): Promise<SerializedParameters> | SerializedParameters;
 
   /**
    * Restores test result parameters from a previously serialized configuration. The returned
@@ -90,6 +89,11 @@ export abstract class SourceHandler<
    * @returns the restored parameters
    */
   public abstract deserializeSourceParameters(
-    serializedParameters: SerializedParametersType
-  ): Parameters<S["getTestResults"]> | Promise<Parameters<S["getTestResults"]>>;
+    serializedParameters: SerializedParameters
+  ): Parameters<S["getTestResults"]>[0] | Promise<Parameters<S["getTestResults"]>[0]>;
 }
+
+// We use any here because I have no idea how to type/infer all the different source types.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type AnySourceHandler = SourceHandler<Source<any, any>, any, any>;
+/* eslint-enable @typescript-eslint/no-explicit-any */

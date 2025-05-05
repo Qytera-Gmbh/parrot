@@ -11,18 +11,23 @@ import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-so
  * The Xray test plan source is responsible for fetching test report data from
  * [Xray server](https://www.getxray.app/) test plans.
  */
-export class XrayTestPlanServerSource extends Source<TestPlanServerSourceOptions, string> {
+export class XrayTestPlanServerSource extends Source<
+  XrayTestPlanServerSourceConfiguration,
+  XrayTestPlanServerSourceParameters
+> {
   /**
    * Retrieves a test plan from the Xray API.
    *
-   * @param testPlanKey the test plan to retrieve
+   * @param parameters the test plan retrieval parameters
    * @returns the test results of the test plan
    */
-  public async getTestResults(testPlanKey: string): Promise<TestResults> {
+  public async getTestResults(
+    parameters: XrayTestPlanServerSourceParameters
+  ): Promise<TestResults> {
     let result;
     let query: SearchForIssuesUsingJqlPost = {
       fields: ["summary"],
-      jql: `issue in (${testPlanKey})`,
+      jql: `issue in (${parameters.testPlanKey})`,
     };
     // TypeScript won't let us search in the union of version 2 and 3 (jira.js problem).
     if (this.configuration.jira.client instanceof Version2Client) {
@@ -31,12 +36,12 @@ export class XrayTestPlanServerSource extends Source<TestPlanServerSourceOptions
       result = await this.configuration.jira.client.issueSearch.searchForIssuesUsingJqlPost(query);
     }
     const testPlan: TestResults = {
-      id: testPlanKey,
+      id: parameters.testPlanKey,
       name: result.issues?.at(0)?.fields.summary ?? "unknown",
       results: [],
-      url: `${this.configuration.jira.url}/browse/${testPlanKey}`,
+      url: `${this.configuration.jira.url}/browse/${parameters.testPlanKey}`,
     };
-    const tests = await this.configuration.xray.client.testPlan.getTests(testPlanKey);
+    const tests = await this.configuration.xray.client.testPlan.getTests(parameters.testPlanKey);
     const testsByKey = new Map<
       string,
       {
@@ -90,7 +95,7 @@ export class XrayTestPlanServerSource extends Source<TestPlanServerSourceOptions
   }
 }
 
-export interface TestPlanServerSourceOptions {
+export interface XrayTestPlanServerSourceConfiguration {
   jira: {
     authentication: JiraAuthentication;
     client: Version2Client | Version3Client;
@@ -101,4 +106,8 @@ export interface TestPlanServerSourceOptions {
     client: XrayClientServer;
     url: string;
   };
+}
+
+export interface XrayTestPlanServerSourceParameters {
+  testPlanKey: string;
 }
