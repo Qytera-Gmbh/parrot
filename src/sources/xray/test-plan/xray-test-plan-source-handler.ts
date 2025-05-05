@@ -155,7 +155,7 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
     }
   }
 
-  public async buildSourceParameters(): Promise<
+  public async buildInlet(): Promise<
     XrayTestPlanCloudSourceParameters | XrayTestPlanServerSourceParameters
   > {
     const testPlanKey = await input({
@@ -165,13 +165,13 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
     return { testPlanKey };
   }
 
-  public serializeSourceParameters(
+  public serializeInlet(
     parameters: XrayTestPlanCloudSourceParameters | XrayTestPlanServerSourceParameters
   ): SerializedParameters {
     return { testPlanKey: parameters.testPlanKey };
   }
 
-  public deserializeSourceParameters(
+  public deserializeInlet(
     serializedParameters: SerializedParameters
   ): XrayTestPlanCloudSourceParameters | XrayTestPlanServerSourceParameters {
     return { testPlanKey: serializedParameters.testPlanKey };

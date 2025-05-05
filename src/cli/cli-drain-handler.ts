@@ -7,8 +7,8 @@ import type { Drain } from "../drains/drain.js";
  */
 export abstract class DrainHandler<
   D extends Drain<unknown, object, unknown>,
-  SerializedDrainConfiguration,
-  SerializedParameters = Parameters<D["writeTestResults"]>[1],
+  SerializedDrainConfiguration = DrainConfiguration<D>,
+  SerializedOutletConfiguration = OutletConfiguration<D>,
 > {
   /**
    * Creates and returns a fully initialised drain instance. The drain can be generated from
@@ -49,18 +49,16 @@ export abstract class DrainHandler<
   public abstract deserializeDrain(serializedDrain: SerializedDrainConfiguration): D | Promise<D>;
 
   /**
-   * Constructs and returns the parameters required for writing test results. Parameters can be
-   * generated from environment variables or interactively created using packages such as
-   * [`@inquirer/prompts`](https://www.npmjs.com/package/@inquirer/prompts).
+   * Constructs and returns the parameters required for writing test results to a specific outlet.
+   * Parameters can be generated from environment variables or interactively created using packages
+   * such as [`@inquirer/prompts`](https://www.npmjs.com/package/@inquirer/prompts).
    *
-   * @returns the parameters
+   * @returns the outlet configuration
    */
-  public abstract buildDrainParameters():
-    | Parameters<D["writeTestResults"]>[1]
-    | Promise<Parameters<D["writeTestResults"]>[1]>;
+  public abstract buildOutlet(): OutletConfiguration<D> | Promise<OutletConfiguration<D>>;
 
   /**
-   * Serializes the given drain writing parameters into a format suitable for storage. The result
+   * Serializes the given drain outlet configuration into a format suitable for storage. The result
    * must be JSON serializable and need not include all drain details. Sensitive values should be
    * omitted or replaced with reconstructible placeholders (e.g., authentication details may be
    * encoded as `{ authentication: "basic" }` instead of storing the credentials in cleartext).
@@ -68,28 +66,31 @@ export abstract class DrainHandler<
    * The actual serialization format is up to the implementation. Anything goes, as long as the
    * corresponding deserialization method is able to accurately reconstruct the parameters.
    *
-   * @param parameters the complete parameters
+   * @param outlet the outlet configuration
    * @returns the JSON-serializable parameters
    */
-  public abstract serializeDrainParameters(
-    parameters: Parameters<D["writeTestResults"]>[1]
-  ): Promise<SerializedParameters> | SerializedParameters;
+  public abstract serializeOutlet(
+    outlet: OutletConfiguration<D>
+  ): Promise<SerializedOutletConfiguration> | SerializedOutletConfiguration;
 
   /**
-   * Restores test result writing parameters from a previously serialized configuration. The
+   * Restores test result outlet configurations from a previously serialized configuration. The
    * returned parameters may be incomplete and require additional input during deserialization.
    *
    * The implementation must be able to restore what was produced by `serializeDrainParameters`.
    * Any missing or omitted details must be filled in from external sources (e.g. environment
    * variables or user input).
    *
-   * @param serializedParameters the serialized parameters
-   * @returns the restored parameters
+   * @param serializedOutlet the serialized outlet
+   * @returns the restored outlet
    */
-  public abstract deserializeDrainParameters(
-    serializedParameters: SerializedParameters
-  ): Parameters<D["writeTestResults"]>[1] | Promise<Parameters<D["writeTestResults"]>[1]>;
+  public abstract deserializeOutlet(
+    serializedOutlet: SerializedOutletConfiguration
+  ): OutletConfiguration<D> | Promise<OutletConfiguration<D>>;
 }
+
+type DrainConfiguration<D> = D extends Drain<infer DC, object, unknown> ? DC : never;
+type OutletConfiguration<D> = D extends Drain<unknown, infer OC, unknown> ? OC : never;
 
 // We use any here because I have no idea how to type/infer all the different drain types.
 /* eslint-disable @typescript-eslint/no-explicit-any */

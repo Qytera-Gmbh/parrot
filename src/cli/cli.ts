@@ -46,10 +46,10 @@ async function main() {
   program.parse();
   const options = program.opts<ProgramOptions>();
   await loadPluginFiles(options.pluginFiles);
-  const { parameters: sourceParameters, source } = await getSource(options);
-  const { drain, parameters: drainParameters } = await getDrain(options);
-  const testResults = await source.getTestResults(sourceParameters);
-  await drain.writeTestResults(testResults, drainParameters);
+  const { inlet, source } = await getSource(options);
+  const { drain, outlet } = await getDrain(options);
+  const testResults = await source.getTestResults(inlet);
+  await drain.writeTestResults(testResults, outlet);
 }
 
 async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
@@ -77,7 +77,7 @@ async function getSource(options: ProgramOptions) {
       message: "Please select your source:",
     });
     const source = await result.handler.buildSource();
-    const parameters = await result.handler.buildSourceParameters();
+    const inlet = await result.handler.buildInlet();
     const confirmation = await confirm({
       message: "Would you like to save your configuration for later use?",
     });
@@ -88,20 +88,20 @@ async function getSource(options: ProgramOptions) {
       });
       const serializedSource: SerializedSource = {
         configuration: await result.handler.serializeSource(source),
-        parameters: await result.handler.serializeSourceParameters(parameters),
+        inlet: await result.handler.serializeInlet(inlet),
         selections: result.selections,
       };
       await writeFile(path, JSON.stringify(serializedSource, null, 2));
     }
-    return { parameters, source };
+    return { inlet, source };
   } else {
     const serializedSource = JSON.parse(
       await readFile(options.configFile, "utf-8")
     ) as SerializedSource;
     const handler = retrieveFromTable(getRegisteredSources(), serializedSource.selections);
     const source = await handler.deserializeSource(serializedSource.configuration);
-    const parameters = await handler.deserializeSourceParameters(serializedSource.parameters);
-    return { parameters, source };
+    const inlet = await handler.deserializeInlet(serializedSource.inlet);
+    return { inlet, source };
   }
 }
 
@@ -111,7 +111,7 @@ async function getDrain(options: ProgramOptions) {
       message: "Please select your drain:",
     });
     const drain = await result.handler.buildDrain();
-    const parameters = await result.handler.buildDrainParameters();
+    const outlet = await result.handler.buildOutlet();
     const confirmation = await confirm({
       message: "Would you like to save your configuration for later use?",
     });
@@ -122,20 +122,20 @@ async function getDrain(options: ProgramOptions) {
       });
       const serializedDrain: SerializedDrain = {
         configuration: await result.handler.serializeDrain(drain),
-        parameters: await result.handler.serializeDrainParameters(parameters),
+        outlet: await result.handler.serializeOutlet(outlet),
         selections: result.selections,
       };
       await writeFile(path, JSON.stringify(serializedDrain, null, 2));
     }
-    return { drain, parameters };
+    return { drain, outlet };
   } else {
     const serializedDrain = JSON.parse(
       await readFile(options.configFile, "utf-8")
     ) as SerializedDrain;
     const handler = retrieveFromTable(getRegisteredDrains(), serializedDrain.selections);
     const drain = await handler.deserializeDrain(serializedDrain.configuration);
-    const parameters = await handler.deserializeDrainParameters(serializedDrain.parameters);
-    return { drain, parameters };
+    const outlet = await handler.deserializeOutlet(serializedDrain.outlet);
+    return { drain, outlet };
   }
 }
 
@@ -194,12 +194,12 @@ interface ProgramOptions {
 
 interface SerializedSource {
   configuration: unknown;
-  parameters: unknown;
+  inlet: unknown;
   selections: string[];
 }
 
 interface SerializedDrain {
   configuration: unknown;
-  parameters: unknown;
+  outlet: unknown;
   selections: string[];
 }
