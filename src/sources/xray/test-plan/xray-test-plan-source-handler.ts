@@ -46,7 +46,7 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
         },
         xray: {
           authentication: xrayAuthenticationChoice,
-          client: new XrayClientServer({ credentials: xrayCredentials, url: jiraUrl }),
+          client: new XrayClientServer({ credentials: xrayCredentials, url: xrayUrl }),
           url: xrayUrl,
         },
       });
@@ -62,7 +62,7 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
         },
         xray: {
           authentication: xrayAuthenticationChoice,
-          client: new XrayClientCloud({ credentials: xrayCredentials, url: jiraUrl }),
+          client: new XrayClientCloud({ credentials: xrayCredentials, url: xrayUrl }),
           url: xrayUrl,
         },
       });
