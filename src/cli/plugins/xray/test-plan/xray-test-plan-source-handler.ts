@@ -1,14 +1,14 @@
 import { input, password, select } from "@inquirer/prompts";
 import { XrayClientCloud, XrayClientServer } from "@qytera/xray-client";
 import { Version2Client, Version3Client } from "jira.js";
-import { SourceHandler } from "../../../cli/cli-source-handler.js";
-import { getEnv } from "../../../util/env.js";
+import { getEnv } from "../../../../util/env.js";
+import { SourceHandler } from "../../../cli-source-handler.js";
+import type { JiraApiVersion, JiraAuthentication, XrayAuthentication } from "../util/constants.js";
+import { JIRA_API_VERSION, JIRA_AUTHENTICATION, XRAY_AUTHENTICATION } from "../util/constants.js";
 import type { XrayTestPlanCloudSourceParameters } from "./xray-test-plan-cloud-source.js";
 import { XrayTestPlanCloudSource } from "./xray-test-plan-cloud-source.js";
 import type { XrayTestPlanServerSourceParameters } from "./xray-test-plan-server-source.js";
 import { XrayTestPlanServerSource } from "./xray-test-plan-server-source.js";
-import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-source.js";
-import { JIRA_AUTHENTICATION, XRAY_AUTHENTICATION } from "./xray-test-plan-source.js";
 
 export class XrayTestPlanSourceHandler extends SourceHandler<
   XrayTestPlanCloudSource | XrayTestPlanServerSource,
@@ -320,9 +320,6 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
     }
   }
 }
-
-const JIRA_API_VERSION = ["version-2", "version-3"] as const;
-type JiraApiVersion = (typeof JIRA_API_VERSION)[number];
 
 interface SerializedConfiguration {
   jira: {

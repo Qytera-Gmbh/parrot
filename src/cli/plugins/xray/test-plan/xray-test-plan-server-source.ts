@@ -3,10 +3,10 @@ import ansiColors from "ansi-colors";
 import type { Version3Client } from "jira.js";
 import { Version2Client } from "jira.js";
 import type { SearchForIssuesUsingJqlPost } from "jira.js/out/version3/parameters/index.js";
-import type { TestResult } from "../../../models/test-model.js";
-import { Source } from "../../source.js";
-import { convertStatus } from "../xray-status.js";
-import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-source.js";
+import type { TestResult } from "../../../../models/test-model.js";
+import { Source } from "../../../../source.js";
+import type { JiraAuthentication, XrayAuthentication } from "../util/constants.js";
+import { convertStatus } from "../util/xray-status.js";
 
 /**
  * The Xray test plan source is responsible for fetching test report data from

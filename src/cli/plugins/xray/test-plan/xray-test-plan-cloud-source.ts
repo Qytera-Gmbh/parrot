@@ -2,10 +2,10 @@ import type { XrayClientCloud } from "@qytera/xray-client";
 import ansiColors from "ansi-colors";
 import type { Version2Client, Version3Client } from "jira.js";
 import type { ProjectDetails } from "jira.js/out/version3/models/index.js";
-import type { TestResult } from "../../../models/test-model.js";
-import { Source } from "../../source.js";
-import { convertStatus } from "../xray-status.js";
-import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-source.js";
+import type { TestResult } from "../../../../models/test-model.js";
+import { Source } from "../../../../source.js";
+import type { JiraAuthentication, XrayAuthentication } from "../util/constants.js";
+import { convertStatus } from "../util/xray-status.js";
 
 /**
  * The Xray test plan source is responsible for fetching test report data from

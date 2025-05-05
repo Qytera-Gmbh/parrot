@@ -1,4 +1,4 @@
-import type { TestResult } from "../models/test-model.js";
+import type { TestResult } from "./models/test-model.js";
 
 /**
  * A source represents a service or tool from which test information can be pulled, such as an Xray
