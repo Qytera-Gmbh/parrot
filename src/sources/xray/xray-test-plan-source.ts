@@ -63,7 +63,7 @@ export class XraySource implements Source<string> {
     let startAt = 0;
     let hasMoreTests = true;
     while (hasMoreTests) {
-      const response = await args.xrayClient.graphql.getTestPlans.query(
+      const response = await args.xrayClient.graphql.getTestPlans(
         { jql: `issue in (${args.testPlanKey})`, limit: 1 },
         (testPlanResults) => [
           testPlanResults.results((testPlan) => [
@@ -168,7 +168,7 @@ export class XraySource implements Source<string> {
       results: [],
       url: `${args.url}/browse/${args.testPlanKey}`,
     };
-    const tests = await args.xrayClient.testPlans.getTests(args.testPlanKey);
+    const tests = await args.xrayClient.testPlan.getTests(args.testPlanKey);
     const testsByKey = new Map<
       string,
       {
