@@ -1,5 +1,5 @@
 {
-  "name": "@qytera/pass-parrot",
+  "name": "@qytera/parrot",
   "version": "0.0.1",
   "description": "A tool for aggregating test results and forwarding them to various destinations, such as HTML reports, Microsoft Teams or Slack.",
   "main": "index.js",
@@ -11,7 +11,7 @@
   "author": "dev@qytera.de",
   "license": "MIT",
   "repository": {
-    "url": "git+https://github.com/Qytera-Gmbh/pass-parrot.git",
+    "url": "git+https://github.com/Qytera-Gmbh/parrot.git",
     "type": "git"
   },
   "keywords": [
