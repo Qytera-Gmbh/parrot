@@ -37,6 +37,7 @@ jobs:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
           MICROSOFT_TEAMS_WEBHOOK_URL: ${{ secrets.MICROSOFT_TEAMS_WEBHOOK_URL }}
+          XRAY_URL: ${{ secrets.XRAY_URL }}
       - uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
