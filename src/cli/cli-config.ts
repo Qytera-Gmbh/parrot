@@ -10,16 +10,16 @@ export interface ParrotConfiguration {
 }
 
 /**
- * Returns the lookup table of source handlers currently registered with Pass Parrot.
+ * Returns the lookup table of source handlers currently registered with Parrot.
  *
  * @returns the lookup table of source handlers
  */
 export function getRegisteredSources(): LookupTable<AnySourceHandler> {
-  return parrotConfiguration.sources;
+  return PARROT_CONFIGURATION.sources;
 }
 
 /**
- * Modifies Pass Parrot's configuration through a callback whose result will replace the current
+ * Modifies Parrot's configuration through a callback whose result will be added to the current
  * configuration. The callback's only parameter is the current configuration.
  *
  * @example
@@ -28,7 +28,6 @@ export function getRegisteredSources(): LookupTable<AnySourceHandler> {
  * await configureParrot((config) => {
  *   return {
  *     sources: {
- *       ...config.sources,
  *       ["my new top level source"]: new MyNewTopLevelSourceHandler(),
  *       ["some other service"]: {
  *         ["nested source"]: new MyNewNestedSourceHandler()
@@ -41,12 +40,15 @@ export function getRegisteredSources(): LookupTable<AnySourceHandler> {
  * @param callback the callback which returns the new configuration
  */
 export async function configureParrot(
-  callback: (config: ParrotConfiguration) => ParrotConfiguration | Promise<ParrotConfiguration>
+  callback: (
+    config: ParrotConfiguration
+  ) => Partial<ParrotConfiguration> | Promise<Partial<ParrotConfiguration>>
 ) {
-  parrotConfiguration = await callback(parrotConfiguration);
+  const newConfiguration = await callback(PARROT_CONFIGURATION);
+  PARROT_CONFIGURATION.sources = { ...PARROT_CONFIGURATION.sources, ...newConfiguration.sources };
 }
 
-let parrotConfiguration: ParrotConfiguration = {
+const PARROT_CONFIGURATION: ParrotConfiguration = {
   sources: {},
 };
 
