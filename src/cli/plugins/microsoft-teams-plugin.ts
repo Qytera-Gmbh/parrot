@@ -5,9 +5,7 @@ await configureParrot(() => {
   return {
     drains: {
       ["microsoft"]: {
-        ["teams"]: {
-          ["channel"]: new MicrosoftTeamsDrainHandler(),
-        },
+        ["teams"]: new MicrosoftTeamsDrainHandler(),
       },
     },
   };
