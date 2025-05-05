@@ -1,10 +1,10 @@
 import type { TestResult } from "../../models/test-result-model.js";
 
 /**
- * Converts an Xray status to a Pass Parrot status.
+ * Converts an Xray status to a Parrot status.
  *
  * @param xrayStatus the Xray status
- * @returns the corresponding Pass Parrot status
+ * @returns the corresponding Parrot status
  */
 export function convertStatus(xrayStatus: string): TestResult["status"] {
   if (xrayStatus === "PASSED" || xrayStatus === "PASS") {
