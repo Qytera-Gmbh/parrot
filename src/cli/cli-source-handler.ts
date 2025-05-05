@@ -1,5 +1,6 @@
 import type { Source } from "../sources/source.js";
 
+// We use any here because I have no idea how to type/infer all the different source types.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type AnySourceHandler = SourceHandler<Source<any, any>, any, any>;
 /* eslint-enable @typescript-eslint/no-explicit-any */

@@ -1,5 +1,6 @@
 import type { Drain } from "../drains/drain.js";
 
+// We use any here because I have no idea how to type/infer all the different drain types.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type AnyDrainHandler = DrainHandler<Drain<any, any>, any>;
 /* eslint-enable @typescript-eslint/no-explicit-any */

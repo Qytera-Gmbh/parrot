@@ -25,6 +25,9 @@
   "exports": {
     ".": "./index.js"
   },
+  "bin": {
+    "parrot": "./src/cli/cli.js"
+  },
   "types": "index.d.ts",
   "type": "module",
   "engines": {
