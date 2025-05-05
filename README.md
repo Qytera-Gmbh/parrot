@@ -55,4 +55,28 @@ Using Parrot means interacting with two main components:
 
 # Usage
 
-Parrot comes with an easy to use CLI to configure the sources and drains.
+Parrot comes with an easy-to-use CLI for configuring sources and drains.
+
+```console
+npx parrot --help
+
+Usage: parrot [options]
+
+Options:
+  -p, --plugin-files <plugin-file...>  the parrot plugin files to use
+  -s, --source-file <source-file>      the saved source configuration to use
+  -d, --drain-file <drain-file>        the saved drain configuration to use
+  -h, --help                           display help for command
+```
+
+Source and drain configurations can be saved to files for later reuse, speeding up subsequent Parrot runs.
+
+## Example: Xray → Microsoft Teams
+
+Initial setup:
+
+[![Prompt Video](./docs/cli-prompts.mp4)](./docs/cli-prompts.mp4)
+
+Setup with reused source configuration:
+
+[![Prompt Video](./docs/cli-prompts-reused.mp4)](./docs/cli-prompts-reused.mp4)

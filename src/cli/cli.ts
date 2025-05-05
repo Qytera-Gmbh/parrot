@@ -31,18 +31,20 @@ await main();
 // ============================================================================================== //
 
 async function main() {
-  const program = new Command()
+  const program = new Command("parrot")
     .option("-p, --plugin-files <plugin-file...>", "the parrot plugin files to use")
-    .option(
-      "-c, --config-file <config-file>",
-      "the saved source and drain configuration to use",
-      (file) => {
-        if (!existsSync(file)) {
-          throw new Error(`Configuration file not found: ${file}`);
-        }
-        return file;
+    .option("-s, --source-file <source-file>", "the saved source configuration to use", (file) => {
+      if (!existsSync(file)) {
+        throw new Error(`Configuration file not found: ${file}`);
       }
-    );
+      return file;
+    })
+    .option("-d, --drain-file <drain-file>", "the saved drain configuration to use", (file) => {
+      if (!existsSync(file)) {
+        throw new Error(`Configuration file not found: ${file}`);
+      }
+      return file;
+    });
   program.parse();
   const options = program.opts<ProgramOptions>();
   await loadPluginFiles(options.pluginFiles);
@@ -72,7 +74,7 @@ async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
 }
 
 async function getSource(options: ProgramOptions) {
-  if (!options.configFile) {
+  if (!options.sourceFile) {
     const result = await descendIntoTable(getRegisteredSources(), {
       message: "Please select your source:",
     });
@@ -96,7 +98,7 @@ async function getSource(options: ProgramOptions) {
     return { inlet, source };
   } else {
     const serializedSource = JSON.parse(
-      await readFile(options.configFile, "utf-8")
+      await readFile(options.sourceFile, "utf-8")
     ) as SerializedSource;
     const handler = retrieveFromTable(getRegisteredSources(), serializedSource.selections);
     const source = await handler.deserializeSource(serializedSource.configuration);
@@ -106,7 +108,7 @@ async function getSource(options: ProgramOptions) {
 }
 
 async function getDrain(options: ProgramOptions) {
-  if (!options.configFile) {
+  if (!options.drainFile) {
     const result = await descendIntoTable(getRegisteredDrains(), {
       message: "Please select your drain:",
     });
@@ -130,7 +132,7 @@ async function getDrain(options: ProgramOptions) {
     return { drain, outlet };
   } else {
     const serializedDrain = JSON.parse(
-      await readFile(options.configFile, "utf-8")
+      await readFile(options.drainFile, "utf-8")
     ) as SerializedDrain;
     const handler = retrieveFromTable(getRegisteredDrains(), serializedDrain.selections);
     const drain = await handler.deserializeDrain(serializedDrain.configuration);
@@ -188,8 +190,9 @@ function retrieveFromTable<HandlerType extends AnyDrainHandler | AnySourceHandle
 }
 
 interface ProgramOptions {
-  configFile?: string;
+  drainFile?: string;
   pluginFiles?: string[];
+  sourceFile?: string;
 }
 
 interface SerializedSource {
