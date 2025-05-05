@@ -75,8 +75,8 @@ Source and drain configurations can be saved to files for later reuse, speeding 
 
 Initial setup:
 
-[![Prompt Video](./docs/cli-prompts.mp4)](./docs/cli-prompts.mp4)
+https://github.com/user-attachments/assets/e789b9a5-5150-41ac-bad0-1757c069a646
 
 Setup with reused source configuration:
 
-[![Prompt Video](./docs/cli-prompts-reused.mp4)](./docs/cli-prompts-reused.mp4)
+https://github.com/user-attachments/assets/263ee870-59c3-4922-a964-e4fbd8b8b27c
