@@ -1,8 +1,8 @@
 import { input, password, select } from "@inquirer/prompts";
 import { XrayClientCloud, XrayClientServer } from "@qytera/xray-client";
 import { Version2Client, Version3Client } from "jira.js";
-import { SourceHandler } from "../../cli/cli-source-handler.js";
-import { getEnv } from "../../util/env.js";
+import { SourceHandler } from "../../../cli/cli-source-handler.js";
+import { getEnv } from "../../../util/env.js";
 import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-source.js";
 import {
   JIRA_AUTHENTICATION,
@@ -151,6 +151,7 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
             (await password({
               message: "Please enter your Xray client secret:",
             })),
+          path: "/api/v2/authenticate" as const,
         };
         break;
       case "pat":
@@ -233,6 +234,7 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
         xrayCredentials = {
           clientId: getEnv("xray-client-id"),
           clientSecret: getEnv("xray-client-secret"),
+          path: "/api/v2/authenticate" as const,
         };
         break;
       case "pat":

@@ -1,4 +1,4 @@
-import { XrayTestPlanSourceHandler } from "../sources/xray/xray-test-plan-source-handler.js";
+import { XrayTestPlanSourceHandler } from "../sources/xray/test-plan/xray-test-plan-source-handler.js";
 import type { AnySourceHandler } from "./cli-source-handler.js";
 
 export interface LookupTable<T> {
