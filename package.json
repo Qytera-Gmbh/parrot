@@ -41,7 +41,7 @@
     "typescript-eslint": "^8.31.1"
   },
   "dependencies": {
-    "@qytera/xray-client": "^0.0.6",
+    "@qytera/xray-client": "^4.0.0",
     "adaptivecards": "3.0.4",
     "canvas": "^3.1.0",
     "jira.js": "^4.0.6"
