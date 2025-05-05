@@ -4,7 +4,7 @@ import type { TestResults } from "../models/test-results-model.js";
  * A source represents a service or tool from which test information can be pulled, such as an Xray
  * test execution, an Azure DevOps test run or a simple Excel sheet.
  */
-export abstract class Source<Configuration, SourceDetails> {
+export abstract class Source<Configuration, SourceDetails extends object> {
   /**
    * The source configuration. It is used during serialization and deserialization of the source.
    */
