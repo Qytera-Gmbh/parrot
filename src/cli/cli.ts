@@ -46,12 +46,10 @@ async function main() {
   program.parse();
   const options = program.opts<ProgramOptions>();
   await loadPluginFiles(options.pluginFiles);
-  const source = await getSource(options);
-  console.log("Source is now ready to use:", source);
-  const drain = await getDrain(options);
-  console.log("Drain is now ready to use:", drain);
-  const testResults = await source.source.getTestResults(source.parameters);
-  await drain.drain.writeTestResults(testResults, drain.parameters);
+  const { parameters: sourceParameters, source } = await getSource(options);
+  const { drain, parameters: drainParameters } = await getDrain(options);
+  const testResults = await source.getTestResults(sourceParameters);
+  await drain.writeTestResults(testResults, drainParameters);
 }
 
 async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
@@ -89,9 +87,9 @@ async function getSource(options: ProgramOptions) {
         message: "Please specify the file to write the configuration to:",
       });
       const serializedSource: SerializedSource = {
+        configuration: await result.handler.serializeSource(source),
         parameters: await result.handler.serializeSourceParameters(parameters),
         selections: result.selections,
-        source: await result.handler.serializeSource(source),
       };
       await writeFile(path, JSON.stringify(serializedSource, null, 2));
     }
@@ -101,7 +99,7 @@ async function getSource(options: ProgramOptions) {
       await readFile(options.configFile, "utf-8")
     ) as SerializedSource;
     const handler = retrieveFromTable(getRegisteredSources(), serializedSource.selections);
-    const source = await handler.deserializeSource(serializedSource.source);
+    const source = await handler.deserializeSource(serializedSource.configuration);
     const parameters = await handler.deserializeSourceParameters(serializedSource.parameters);
     return { parameters, source };
   }
@@ -123,7 +121,7 @@ async function getDrain(options: ProgramOptions) {
         message: "Please specify the file to write the configuration to:",
       });
       const serializedDrain: SerializedDrain = {
-        drain: await result.handler.serializeDrain(drain),
+        configuration: await result.handler.serializeDrain(drain),
         parameters: await result.handler.serializeDrainParameters(parameters),
         selections: result.selections,
       };
@@ -135,7 +133,7 @@ async function getDrain(options: ProgramOptions) {
       await readFile(options.configFile, "utf-8")
     ) as SerializedDrain;
     const handler = retrieveFromTable(getRegisteredDrains(), serializedDrain.selections);
-    const drain = await handler.deserializeDrain(serializedDrain.drain);
+    const drain = await handler.deserializeDrain(serializedDrain.configuration);
     const parameters = await handler.deserializeDrainParameters(serializedDrain.parameters);
     return { drain, parameters };
   }
@@ -195,13 +193,13 @@ interface ProgramOptions {
 }
 
 interface SerializedSource {
+  configuration: unknown;
   parameters: unknown;
   selections: string[];
-  source: unknown;
 }
 
 interface SerializedDrain {
-  drain: unknown;
+  configuration: unknown;
   parameters: unknown;
   selections: string[];
 }

@@ -6,7 +6,7 @@ import type { Source } from "../sources/source.js";
  * source may be built and immediately used in a programmatic fashion.
  */
 export abstract class SourceHandler<
-  S extends Source<unknown, unknown>,
+  S extends Source<unknown, object>,
   SerializedSourceConfiguration,
   SerializedParameters = Parameters<S["getTestResults"]>[0],
 > {
