@@ -11,25 +11,28 @@ import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-so
  * The Xray test plan source is responsible for fetching test report data from
  * [Xray cloud](https://www.getxray.app/) test plans.
  */
-export class XrayTestPlanCloudSource extends Source<TestPlanCloudSourceOptions, string> {
+export class XrayTestPlanCloudSource extends Source<
+  XrayTestPlanCloudSourceConfiguration,
+  XrayTestPlanCloudSourceParameters
+> {
   /**
    * Retrieves a test plan from the Xray API.
    *
-   * @param testPlanKey the test plan to retrieve
+   * @param parameters the test plan retrieval parameters
    * @returns the test results of the test plan
    */
-  public async getTestResults(testPlanKey: string): Promise<TestResults> {
+  public async getTestResults(parameters: XrayTestPlanCloudSourceParameters): Promise<TestResults> {
     const parsedTestPlan: TestResults = {
-      id: testPlanKey,
+      id: parameters.testPlanKey,
       name: "unknown",
       results: [],
-      url: `${this.configuration.jira.url}/browse/${testPlanKey}`,
+      url: `${this.configuration.jira.url}/browse/${parameters.testPlanKey}`,
     };
     let startAt = 0;
     let hasMoreTests = true;
     while (hasMoreTests) {
       const response = await this.configuration.xray.client.graphql.getTestPlans(
-        { jql: `issue in (${testPlanKey})`, limit: 1 },
+        { jql: `issue in (${parameters.testPlanKey})`, limit: 1 },
         (testPlanResults) => [
           testPlanResults.results((testPlan) => [
             testPlan.jira({ fields: ["summary", "project"] }),
@@ -51,12 +54,12 @@ export class XrayTestPlanCloudSource extends Source<TestPlanCloudSourceOptions, 
       );
       const result = response.results?.at(0);
       if (!result) {
-        throw new Error(`failed to find test plan ${testPlanKey}`);
+        throw new Error(`failed to find test plan ${parameters.testPlanKey}`);
       }
       const testPlanProject = result.jira?.project as ProjectDetails | undefined;
       const projectKey = testPlanProject?.key;
       if (!projectKey) {
-        throw new Error(`failed to retrieve project of test plan ${testPlanKey}`);
+        throw new Error(`failed to retrieve project of test plan ${parameters.testPlanKey}`);
       }
       parsedTestPlan.name = result.jira?.summary as string;
       const returnedTests = result.tests?.results;
@@ -79,7 +82,7 @@ export class XrayTestPlanCloudSource extends Source<TestPlanCloudSourceOptions, 
             parsedTestPlan.results.push({
               result: {
                 status: "pending",
-                url: `${this.configuration.jira.url}/browser/${testPlanKey}`,
+                url: `${this.configuration.jira.url}/browser/${parameters.testPlanKey}`,
               },
               test: test,
             });
@@ -111,7 +114,7 @@ export class XrayTestPlanCloudSource extends Source<TestPlanCloudSourceOptions, 
   }
 }
 
-export interface TestPlanCloudSourceOptions {
+export interface XrayTestPlanCloudSourceConfiguration {
   jira: {
     authentication: JiraAuthentication;
     client: Version2Client | Version3Client;
@@ -122,4 +125,8 @@ export interface TestPlanCloudSourceOptions {
     client: XrayClientCloud;
     url: string;
   };
+}
+
+export interface XrayTestPlanCloudSourceParameters {
+  testPlanKey: string;
 }
