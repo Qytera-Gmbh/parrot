@@ -51,8 +51,8 @@ Using Parrot means interacting with two main components:
 
     - Examples: Microsoft Teams channel, Slack channel
 
-Both sources and drains
+<img width="100%" src="docs/terminology.png" alt="Parrot Terminology">
 
 # Usage
 
-TBD
+Parrot comes with an easy to use CLI to configure the sources and drains.
