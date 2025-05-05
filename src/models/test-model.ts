@@ -11,6 +11,7 @@ export interface TestResult extends HasId, HasName, HasUrl {
   status: "fail" | "pass" | "pending" | "skipped";
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface TestExecutionMetadata extends HasUrl {
   //
 }
