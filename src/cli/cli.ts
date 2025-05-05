@@ -7,24 +7,15 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import {
   DEFAULT_PLUGIN_CONFIG_FILES,
+  getRegisteredDrains,
   getRegisteredSources,
   type LookupTable,
 } from "./cli-config.js";
+import { DrainHandler, type AnyDrainHandler } from "./cli-drain-handler.js";
 import type { AnySourceHandler } from "./cli-source-handler.js";
 import { SourceHandler } from "./cli-source-handler.js";
 
 import "dotenv/config";
-
-interface ProgramOptions {
-  configFile?: string;
-  pluginFiles?: string[];
-}
-
-interface SerializedSource {
-  parameters: unknown;
-  selections: string[];
-  source: unknown;
-}
 
 const PROGRAM = new Command()
   .option("-p, --plugin-files <plugin-file...>", "the parrot plugin files to use")
@@ -44,12 +35,20 @@ console.log("│                                      │");
 console.log("│           🦜 Parrot CLI 🦜           │");
 console.log("│                                      │");
 console.log("└──────────────────────────────────────┘");
-
 PROGRAM.parse();
-
 const OPTIONS = PROGRAM.opts<ProgramOptions>();
-
 await loadPluginFiles(OPTIONS.pluginFiles);
+const SOURCE = await getSource(OPTIONS);
+console.log("Source is now ready to use:", SOURCE);
+const DRAIN = await getDrain(OPTIONS);
+console.log("Drain is now ready to use:", DRAIN);
+const TEST_RESULTS = await SOURCE.source.getTestResults(SOURCE.parameters);
+await DRAIN.drain.writeTestResults(TEST_RESULTS, DRAIN.parameters);
+
+// ============================================================================================== //
+// We're dealing with parsed configurations of unknown sources/drains. There's no way around any.
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+// ============================================================================================== //
 
 async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
   // Make sure to always load the plugin files that come shipped with parrot.
@@ -70,9 +69,6 @@ async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
   }
 }
 
-const SOURCE = await getSource(OPTIONS);
-console.log("Source is now ready to use:", SOURCE);
-
 async function getSource(options: ProgramOptions) {
   if (!options.configFile) {
     const result = await descendIntoTable(getRegisteredSources(), {
@@ -85,7 +81,7 @@ async function getSource(options: ProgramOptions) {
     });
     if (confirmation) {
       const path = await input({
-        default: "config.json",
+        default: "source-config.json",
         message: "Please specify the file to write the configuration to:",
       });
       const serializedSource: SerializedSource = {
@@ -107,11 +103,45 @@ async function getSource(options: ProgramOptions) {
   }
 }
 
-async function descendIntoTable(
-  table: LookupTable<AnySourceHandler>,
+async function getDrain(options: ProgramOptions) {
+  if (!options.configFile) {
+    const result = await descendIntoTable(getRegisteredDrains(), {
+      message: "Please select your drain:",
+    });
+    const drain = await result.handler.buildDrain();
+    const parameters = await result.handler.buildDrainParameters();
+    const confirmation = await confirm({
+      message: "Would you like to save your configuration for later use?",
+    });
+    if (confirmation) {
+      const path = await input({
+        default: "drain-config.json",
+        message: "Please specify the file to write the configuration to:",
+      });
+      const serializedDrain: SerializedDrain = {
+        drain: await result.handler.serializeDrain(drain),
+        parameters: await result.handler.serializeDrainParameters(parameters),
+        selections: result.selections,
+      };
+      await writeFile(path, JSON.stringify(serializedDrain, null, 2));
+    }
+    return { drain, parameters };
+  } else {
+    const serializedDrain = JSON.parse(
+      await readFile(options.configFile, "utf-8")
+    ) as SerializedDrain;
+    const handler = retrieveFromTable(getRegisteredDrains(), serializedDrain.selections);
+    const drain = await handler.deserializeDrain(serializedDrain.drain);
+    const parameters = await handler.deserializeDrainParameters(serializedDrain.parameters);
+    return { drain, parameters };
+  }
+}
+
+async function descendIntoTable<HandlerType extends AnyDrainHandler | AnySourceHandler>(
+  table: LookupTable<HandlerType>,
   config: { message: string }
 ): Promise<{
-  handler: AnySourceHandler;
+  handler: HandlerType;
   selections: string[];
 }> {
   const keys = Object.keys(table);
@@ -123,7 +153,7 @@ async function descendIntoTable(
     message: config.message,
   });
   const value = table[choice];
-  if (value instanceof SourceHandler) {
+  if (value instanceof SourceHandler || value instanceof DrainHandler) {
     return { handler: value, selections: [choice] };
   } else {
     const result = await descendIntoTable(value, { message: "Please refine your selection:" });
@@ -131,10 +161,10 @@ async function descendIntoTable(
   }
 }
 
-function retrieveFromTable(
-  table: LookupTable<AnySourceHandler>,
+function retrieveFromTable<HandlerType extends AnyDrainHandler | AnySourceHandler>(
+  table: LookupTable<HandlerType>,
   selections: string[]
-): AnySourceHandler {
+): HandlerType {
   let currentTable = table;
   for (let i = 0; i < selections.length; i++) {
     const selection = selections[i];
@@ -142,7 +172,7 @@ function retrieveFromTable(
       break;
     }
     const value = currentTable[selection];
-    if (value instanceof SourceHandler) {
+    if (value instanceof SourceHandler || value instanceof DrainHandler) {
       if (i === selections.length - 1) {
         return value;
       } else {
@@ -153,4 +183,21 @@ function retrieveFromTable(
     }
   }
   throw new Error(`failed to find a handler registered for selection: ${selections.join(" -> ")}`);
+}
+
+interface ProgramOptions {
+  configFile?: string;
+  pluginFiles?: string[];
+}
+
+interface SerializedSource {
+  parameters: unknown;
+  selections: string[];
+  source: unknown;
+}
+
+interface SerializedDrain {
+  drain: unknown;
+  parameters: unknown;
+  selections: string[];
 }
