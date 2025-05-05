@@ -17,7 +17,7 @@ describe(path.relative(process.cwd(), import.meta.filename), () => {
           url: getEnv("xray-url"),
         },
       });
-      const testPlan = await source.getTestResults("PAPA-152");
+      const testPlan = await source.getTestResults({ testPlanKey: "PAPA-152" });
       assert.deepStrictEqual(testPlan, {
         id: "PAPA-152",
         name: "test plan with 150 tests",
