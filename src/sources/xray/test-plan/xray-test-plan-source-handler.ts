@@ -3,12 +3,10 @@ import { XrayClientCloud, XrayClientServer } from "@qytera/xray-client";
 import { Version2Client, Version3Client } from "jira.js";
 import { SourceHandler } from "../../../cli/cli-source-handler.js";
 import { getEnv } from "../../../util/env.js";
+import { XrayTestPlanCloudSource } from "./xray-test-plan-cloud-source.js";
+import { XrayTestPlanServerSource } from "./xray-test-plan-server-source.js";
 import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-source.js";
-import {
-  JIRA_AUTHENTICATION,
-  XRAY_AUTHENTICATION,
-  XrayTestPlanSource,
-} from "./xray-test-plan-source.js";
+import { JIRA_AUTHENTICATION, XRAY_AUTHENTICATION } from "./xray-test-plan-source.js";
 
 const JIRA_API_VERSION = ["version-2", "version-3"] as const;
 type JiraApiVersion = (typeof JIRA_API_VERSION)[number];
@@ -27,11 +25,11 @@ interface StoredConfiguration {
 }
 
 export class XrayTestPlanSourceHandler extends SourceHandler<
-  XrayTestPlanSource,
+  XrayTestPlanCloudSource | XrayTestPlanServerSource,
   StoredConfiguration,
   string
 > {
-  public async buildSource(): Promise<XrayTestPlanSource> {
+  public async buildSource(): Promise<XrayTestPlanCloudSource | XrayTestPlanServerSource> {
     const serverOrCloud = await select<"cloud" | "server">({
       choices: ["server", "cloud"],
       message: "Are you using Jira/Xray Server/DC or Cloud?",
@@ -169,29 +167,44 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
         };
         break;
     }
-    return new XrayTestPlanSource({
-      jira: {
-        authentication: jiraAuthenticationChoice,
-        client:
-          jiraVersionChoice === "version-2"
-            ? new Version2Client({ authentication: jiraAuthentication, host: jiraUrl })
-            : new Version3Client({ authentication: jiraAuthentication, host: jiraUrl }),
-        url: jiraUrl,
-      },
-      xray: {
-        authentication: xrayAuthenticationChoice,
-        client: isServer
-          ? new XrayClientServer({ credentials: xrayAuthentication, url: jiraUrl })
-          : new XrayClientCloud({
-              credentials: xrayAuthentication,
-              url: xrayUrl,
-            }),
-        url: xrayUrl,
-      },
-    });
+    if (isServer) {
+      return new XrayTestPlanServerSource({
+        jira: {
+          authentication: jiraAuthenticationChoice,
+          client:
+            jiraVersionChoice === "version-2"
+              ? new Version2Client({ authentication: jiraAuthentication, host: jiraUrl })
+              : new Version3Client({ authentication: jiraAuthentication, host: jiraUrl }),
+          url: jiraUrl,
+        },
+        xray: {
+          authentication: xrayAuthenticationChoice,
+          client: new XrayClientServer({ credentials: xrayAuthentication, url: jiraUrl }),
+          url: xrayUrl,
+        },
+      });
+    } else {
+      return new XrayTestPlanCloudSource({
+        jira: {
+          authentication: jiraAuthenticationChoice,
+          client:
+            jiraVersionChoice === "version-2"
+              ? new Version2Client({ authentication: jiraAuthentication, host: jiraUrl })
+              : new Version3Client({ authentication: jiraAuthentication, host: jiraUrl }),
+          url: jiraUrl,
+        },
+        xray: {
+          authentication: xrayAuthenticationChoice,
+          client: new XrayClientCloud({ credentials: xrayAuthentication, url: jiraUrl }),
+          url: xrayUrl,
+        },
+      });
+    }
   }
 
-  public serializeSource(source: XrayTestPlanSource): StoredConfiguration {
+  public serializeSource(
+    source: XrayTestPlanCloudSource | XrayTestPlanServerSource
+  ): StoredConfiguration {
     const config = source.getConfiguration();
     return {
       jira: {
@@ -207,7 +220,9 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
     };
   }
 
-  public deserializeSource(serializedSource: StoredConfiguration): XrayTestPlanSource {
+  public deserializeSource(
+    serializedSource: StoredConfiguration
+  ): XrayTestPlanCloudSource | XrayTestPlanServerSource {
     let jiraCredentials;
     switch (serializedSource.jira.authentication) {
       case "basic":
@@ -273,18 +288,33 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
         });
         break;
     }
-    return new XrayTestPlanSource({
-      jira: {
-        authentication: serializedSource.jira.authentication,
-        client: jiraClient,
-        url: serializedSource.jira.url,
-      },
-      xray: {
-        authentication: serializedSource.xray.authentication,
-        client: xrayClient,
-        url: serializedSource.xray.url,
-      },
-    });
+    if (xrayClient instanceof XrayClientCloud) {
+      return new XrayTestPlanCloudSource({
+        jira: {
+          authentication: serializedSource.jira.authentication,
+          client: jiraClient,
+          url: serializedSource.jira.url,
+        },
+        xray: {
+          authentication: serializedSource.xray.authentication,
+          client: xrayClient,
+          url: serializedSource.xray.url,
+        },
+      });
+    } else {
+      return new XrayTestPlanServerSource({
+        jira: {
+          authentication: serializedSource.jira.authentication,
+          client: jiraClient,
+          url: serializedSource.jira.url,
+        },
+        xray: {
+          authentication: serializedSource.xray.authentication,
+          client: xrayClient,
+          url: serializedSource.xray.url,
+        },
+      });
+    }
   }
 
   public async buildSourceParameters(): Promise<[testPlanKey: string]> {
