@@ -4,6 +4,8 @@ import { run } from "node:test";
 import { junit, spec } from "node:test/reporters";
 import { findFiles } from "./util.js";
 
+import "dotenv/config";
+
 const SRC_DIR = resolve("src");
 
 const TEST_STREAM = run({
