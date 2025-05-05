@@ -94,12 +94,13 @@ This allows you to register your own data sources or behaviours at runtime.
 To load one or more plugin files, simply pass them when running the CLI:
 
 ```sh
-npx parrot --plugin-file ./my-source.js ./another-plugin.ts
+npx parrot --plugin-file ./my-plugin.js ./another-plugin.ts
 ```
 
 Each plugin should call `configureParrot()` to hook into the system.
 
 ```js
+// my-plugin.js
 import { configureParrot } from "@qytera/parrot";
 
 await configureParrot((config) => {
@@ -117,13 +118,13 @@ await configureParrot((config) => {
 ```
 
 You can define top-level or nested sources, depending on your use case.
-All plugins are merged together, allowing modular composition of features.
+All plugins specified are added to the plugins that come with Parrot, allowing a modular composition of features.
 
 ## Implementation
 
 > [!NOTE]
 > Parrot comes with a number of built-in plugins that you can use as a reference.
-> Check out the [`src/plugins`](./src/cli/plugins/) directory in the repository to see how existing sources and drains are implemented in practice.
+> Check out the [`plugins`](./src/cli/plugins/) directory in the repository to see how existing sources and drains are implemented in practice.
 
 When implementing a new plugin, you'll need to extend the following abstract classes to define how data is fetched and where it is sent:
 
