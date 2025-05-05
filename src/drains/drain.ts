@@ -4,7 +4,7 @@ import type { TestResults } from "../models/test-results-model.js";
  * A drain represents a service or tool to which test information can be pushed, such as Slack,
  * Microsoft Teams or simply the standard output.
  */
-export abstract class Drain<Configuration, DrainDetails, DrainResult> {
+export abstract class Drain<Configuration, DrainDetails extends object, DrainResult> {
   /**
    * The drain configuration. It is used during serialization and deserialization of the drain.
    */
