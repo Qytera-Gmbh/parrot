@@ -160,7 +160,7 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
   > {
     const testPlanKey = await input({
       message:
-        "Please enter the issue key of the test plan you want to use as the source (e.g. ABC-123):",
+        "Please enter the issue key of the test plan you want to use as an inlet (e.g. ABC-123):",
     });
     return { testPlanKey };
   }
