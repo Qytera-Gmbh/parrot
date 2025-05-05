@@ -1,4 +1,4 @@
-import type { Source } from "../sources/source.js";
+import type { Source } from "../source.js";
 
 /**
  * A source handler is responsible for building a source from scratch and for restoring sources from

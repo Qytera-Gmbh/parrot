@@ -1,6 +1,6 @@
 import ansiColors from "ansi-colors";
-import type { TestResult } from "../../models/test-model.js";
-import { Drain } from "../drain.js";
+import { Drain } from "../../../../drain.js";
+import type { TestResult } from "../../../../models/test-model.js";
 import type { AdaptiveCardMessage } from "./microsoft-teams-cards.js";
 import { getTestResultsCard } from "./microsoft-teams-cards.js";
 

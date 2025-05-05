@@ -1,5 +1,5 @@
 import * as Adaptive from "adaptivecards";
-import type { TestResult } from "../../models/test-model.js";
+import type { TestResult } from "../../../../models/test-model.js";
 import { createPieChart } from "./card-chart.js";
 
 export interface AdaptiveCardMessage {

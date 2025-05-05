@@ -1,8 +1,8 @@
 import assert from "node:assert";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { JIRA_CLIENT_CLOUD, XRAY_CLIENT_CLOUD } from "../../../../test/clients.js";
-import { getEnv } from "../../../util/env.js";
+import { JIRA_CLIENT_CLOUD, XRAY_CLIENT_CLOUD } from "../../../../../test/clients.js";
+import { getEnv } from "../../../../util/env.js";
 import { XrayTestPlanCloudSource } from "./xray-test-plan-cloud-source.js";
 
 describe(path.relative(process.cwd(), import.meta.filename), () => {

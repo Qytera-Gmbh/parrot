@@ -1,6 +1,6 @@
 import { input } from "@inquirer/prompts";
-import { DrainHandler } from "../../cli/cli-drain-handler.js";
-import { getEnv } from "../../util/env.js";
+import { getEnv } from "../../../../util/env.js";
+import { DrainHandler } from "../../../cli-drain-handler.js";
 import type { MicrosoftTeamsOutlet } from "./microsoft-teams-drain.js";
 import { MicrosoftTeamsDrain } from "./microsoft-teams-drain.js";
 

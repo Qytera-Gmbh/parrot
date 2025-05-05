@@ -135,12 +135,12 @@ When implementing a new plugin, you'll need to extend the following abstract cla
 
 - Custom Sources
 
-  - [`Source`](./src/sources/source.ts): Responsible for fetching the actual test results from a source.
+  - [`Source`](./src/source.ts): Responsible for fetching the actual test results from a source.
   - [`SourceHandler`](./src/cli/cli-source-handler.ts): Responsible for building the source configuration (e.g. via CLI prompts) and instantiating the actual source.
 
 - Custom Drains
 
-  - [`Drain`](./src/drains/drain.ts): Responsible for writing the test summary to a drain (e.g. a reporting system, file, or API).
+  - [`Drain`](./src/drain.ts): Responsible for writing the test summary to a drain (e.g. a reporting system, file, or API).
   - [`DrainHandler`](./src/cli/cli-drain-handler.ts): Responsible for building the drain configuration (e.g. via CLI prompts) and instantiating the actual drain.
 
 Each of these base classes provides the necessary structure and lifecycle hooks to ensure that your plugin integrates cleanly into the Parrot runtime.

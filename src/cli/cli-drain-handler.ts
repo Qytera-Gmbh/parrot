@@ -1,4 +1,4 @@
-import type { Drain } from "../drains/drain.js";
+import type { Drain } from "../drain.js";
 
 /**
  * A drain handler is responsible for building a drain from scratch and for restoring drains from
