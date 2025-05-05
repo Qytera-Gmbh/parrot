@@ -74,6 +74,11 @@ Source and drain configurations can be saved to files for later reuse, speeding 
 > [!NOTE]
 > Note that sensitive values such as usernames or passwords are not stored in the configuration files.
 > Which values to save and which to omit is baked into the source and drain implementations.
+>
+> However, Parrot automatically parses .env files (if available) and loads their values into the environment before the CLI starts.
+> This makes the CLI experience smoother by pre-populating configuration values and reducing the number of interactive questions asked.
+>
+> If your [custom source or drain](#custom-plugins) relies on environment variables (e.g. credentials, endpoints, default filters), simply access them via `process.env` in your plugin logic.
 
 ## Example: Xray → Microsoft Teams
 
