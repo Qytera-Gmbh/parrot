@@ -4,10 +4,10 @@ import type { Version3Client } from "jira.js";
 import { Version2Client } from "jira.js";
 import type { ProjectDetails } from "jira.js/out/version3/models/index.js";
 import type { SearchForIssuesUsingJqlPost } from "jira.js/out/version3/parameters/index.js";
-import type { Test } from "../../models/test-model.js";
-import type { TestResults } from "../../models/test-results-model.js";
-import { Source } from "../source.js";
-import { convertStatus } from "./xray-status.js";
+import type { Test } from "../../../models/test-model.js";
+import type { TestResults } from "../../../models/test-results-model.js";
+import { Source } from "../../source.js";
+import { convertStatus } from "../xray-status.js";
 
 /**
  * The Xray test plan source is responsible for fetching test report data from
