@@ -17,38 +17,42 @@ import { SourceHandler } from "./cli-source-handler.js";
 
 import "dotenv/config";
 
-const PROGRAM = new Command()
-  .option("-p, --plugin-files <plugin-file...>", "the parrot plugin files to use")
-  .option(
-    "-c, --config-file <config-file>",
-    "the saved source and drain configuration to use",
-    (file) => {
-      if (!existsSync(file)) {
-        throw new Error(`Configuration file not found: ${file}`);
-      }
-      return file;
-    }
-  );
-
 console.log("┌──────────────────────────────────────┐");
 console.log("│                                      │");
-console.log("│           🦜 Parrot CLI 🦜           │");
+console.log("│              Parrot CLI              │");
 console.log("│                                      │");
 console.log("└──────────────────────────────────────┘");
-PROGRAM.parse();
-const OPTIONS = PROGRAM.opts<ProgramOptions>();
-await loadPluginFiles(OPTIONS.pluginFiles);
-const SOURCE = await getSource(OPTIONS);
-console.log("Source is now ready to use:", SOURCE);
-const DRAIN = await getDrain(OPTIONS);
-console.log("Drain is now ready to use:", DRAIN);
-const TEST_RESULTS = await SOURCE.source.getTestResults(SOURCE.parameters);
-await DRAIN.drain.writeTestResults(TEST_RESULTS, DRAIN.parameters);
+
+await main();
 
 // ============================================================================================== //
 // We're dealing with parsed configurations of unknown sources/drains. There's no way around any.
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 // ============================================================================================== //
+
+async function main() {
+  const program = new Command()
+    .option("-p, --plugin-files <plugin-file...>", "the parrot plugin files to use")
+    .option(
+      "-c, --config-file <config-file>",
+      "the saved source and drain configuration to use",
+      (file) => {
+        if (!existsSync(file)) {
+          throw new Error(`Configuration file not found: ${file}`);
+        }
+        return file;
+      }
+    );
+  program.parse();
+  const options = program.opts<ProgramOptions>();
+  await loadPluginFiles(options.pluginFiles);
+  const source = await getSource(options);
+  console.log("Source is now ready to use:", source);
+  const drain = await getDrain(options);
+  console.log("Drain is now ready to use:", drain);
+  const testResults = await source.source.getTestResults(source.parameters);
+  await drain.drain.writeTestResults(testResults, drain.parameters);
+}
 
 async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
   // Make sure to always load the plugin files that come shipped with parrot.
