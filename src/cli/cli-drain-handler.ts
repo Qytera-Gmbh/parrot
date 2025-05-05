@@ -6,7 +6,7 @@ import type { Drain } from "../drains/drain.js";
  * drain may be built and immediately used in a programmatic fashion.
  */
 export abstract class DrainHandler<
-  D extends Drain<unknown, unknown, unknown>,
+  D extends Drain<unknown, object, unknown>,
   SerializedDrainConfiguration,
   SerializedParameters = Parameters<D["writeTestResults"]>[1],
 > {
