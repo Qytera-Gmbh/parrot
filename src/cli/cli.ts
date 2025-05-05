@@ -3,7 +3,6 @@
 import { confirm, input, select } from "@inquirer/prompts";
 import { Command } from "commander";
 import { defaultLoaders } from "cosmiconfig";
-import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import type { TestResult } from "../models/test-model.js";
 import {
@@ -34,23 +33,13 @@ await main();
 async function main() {
   const program = new Command("parrot")
     .option("-p, --plugin-files <plugin-file...>", "the parrot plugin files to use")
-    .option("-s, --source-file <source-file>", "the saved source configuration to use", (file) => {
-      if (!existsSync(file)) {
-        throw new Error(`Configuration file not found: ${file}`);
-      }
-      return file;
-    })
-    .option("-d, --drain-file <drain-file>", "the saved drain configuration to use", (file) => {
-      if (!existsSync(file)) {
-        throw new Error(`Configuration file not found: ${file}`);
-      }
-      return file;
-    });
+    .option("-s, --source-file <source-file>", "the saved source configuration to use")
+    .option("-d, --drain-file <drain-file>", "the saved drain configuration to use");
   program.parse();
-  const options = program.opts<ProgramOptions>();
-  await loadPluginFiles(options.pluginFiles);
-  const { inlets, source } = await getSource(options);
-  const { drain, outlets } = await getDrain(options);
+  const { drainFile, pluginFiles, sourceFile } = program.opts<ProgramOptions>();
+  await loadPluginFiles(pluginFiles);
+  const { inlets, source } = await getSource(sourceFile);
+  const { drain, outlets } = await getDrain(drainFile);
   const testResults: TestResult[] = [];
   for (const inlet of inlets) {
     testResults.push(...(await source.getTestResults(inlet)));
@@ -61,13 +50,12 @@ async function main() {
 }
 
 async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
-  // Make sure to always load the plugin files that come shipped with parrot.
-  const files = [...DEFAULT_PLUGIN_CONFIG_FILES, ...(pluginFiles ?? [])];
-  let loader;
+  const files = [...DEFAULT_PLUGIN_CONFIG_FILES];
+  if (pluginFiles) {
+    files.push(...pluginFiles);
+  }
   for (const pluginFile of files) {
-    if (!existsSync(pluginFile)) {
-      throw new Error(`Plugin file not found: ${pluginFile}`);
-    }
+    let loader;
     if (pluginFile.endsWith(".js") || pluginFile.endsWith(".mjs")) {
       loader = defaultLoaders[".js"];
     } else if (pluginFile.endsWith(".ts")) {
@@ -79,8 +67,17 @@ async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
   }
 }
 
-async function getSource(options: ProgramOptions) {
-  if (!options.sourceFile) {
+async function getSource(sourceFile?: string) {
+  if (sourceFile) {
+    const serializedSource = JSON.parse(await readFile(sourceFile, "utf-8")) as SerializedSource;
+    const handler = retrieveFromTable(getRegisteredSources(), serializedSource.selections);
+    const source = await handler.deserializeSource(serializedSource.configuration);
+    const inlets = [];
+    for (const inlet of serializedSource.inlets) {
+      inlets.push(await handler.deserializeInlet(inlet));
+    }
+    return { inlets, source };
+  } else {
     const result = await descendIntoTable(getRegisteredSources(), {
       message: "Please select your source:",
     });
@@ -116,22 +113,20 @@ async function getSource(options: ProgramOptions) {
       await writeFile(path, JSON.stringify(serializedSource, null, 2));
     }
     return { inlets, source };
-  } else {
-    const serializedSource = JSON.parse(
-      await readFile(options.sourceFile, "utf-8")
-    ) as SerializedSource;
-    const handler = retrieveFromTable(getRegisteredSources(), serializedSource.selections);
-    const source = await handler.deserializeSource(serializedSource.configuration);
-    const inlets = [];
-    for (const inlet of serializedSource.inlets) {
-      inlets.push(await handler.deserializeInlet(inlet));
-    }
-    return { inlets, source };
   }
 }
 
-async function getDrain(options: ProgramOptions) {
-  if (!options.drainFile) {
+async function getDrain(drainFile?: string) {
+  if (drainFile) {
+    const serializedDrain = JSON.parse(await readFile(drainFile, "utf-8")) as SerializedDrain;
+    const handler = retrieveFromTable(getRegisteredDrains(), serializedDrain.selections);
+    const drain = await handler.deserializeDrain(serializedDrain.configuration);
+    const outlets = [];
+    for (const inlet of serializedDrain.outlets) {
+      outlets.push(await handler.deserializeOutlet(inlet));
+    }
+    return { drain, outlets };
+  } else {
     const result = await descendIntoTable(getRegisteredDrains(), {
       message: "Please select your drain:",
     });
@@ -167,20 +162,18 @@ async function getDrain(options: ProgramOptions) {
       await writeFile(path, JSON.stringify(serializedDrain, null, 2));
     }
     return { drain, outlets };
-  } else {
-    const serializedDrain = JSON.parse(
-      await readFile(options.drainFile, "utf-8")
-    ) as SerializedDrain;
-    const handler = retrieveFromTable(getRegisteredDrains(), serializedDrain.selections);
-    const drain = await handler.deserializeDrain(serializedDrain.configuration);
-    const outlets = [];
-    for (const inlet of serializedDrain.outlets) {
-      outlets.push(await handler.deserializeOutlet(inlet));
-    }
-    return { drain, outlets };
   }
 }
 
+/**
+ * Recursively traverses a nested lookup table, prompting the user to make selections until a
+ * concrete handler instance is reached.
+ *
+ * @param table a lookup table containing either handlers or further nested tables
+ * @param config configuration for the selection prompts
+ *
+ * @throws if the specified table has no selectable keys
+ */
 async function descendIntoTable<HandlerType extends AnyDrainHandler | AnySourceHandler>(
   table: LookupTable<HandlerType>,
   config: { message: string }
@@ -205,19 +198,40 @@ async function descendIntoTable<HandlerType extends AnyDrainHandler | AnySourceH
   }
 }
 
+/**
+ * Retrieves a value from a (nested) lookup table based on a specified chain of keys.
+ *
+ * @example
+ *
+ * ```ts
+ * const table = {
+ *   a: {
+ *     b: {
+ *       c: new MyCustomHandler()
+ *     }
+ *   }
+ * }
+ * const handler = retrieveFromTable(table, ["a", "b", "c"]);
+ * // MyCustomHandler
+ * ```
+ *
+ * @param table the lookup table
+ * @param keys the keys
+ * @returns the (nested) value
+ */
 function retrieveFromTable<HandlerType extends AnyDrainHandler | AnySourceHandler>(
   table: LookupTable<HandlerType>,
-  selections: string[]
+  keys: string[]
 ): HandlerType {
   let currentTable = table;
-  for (let i = 0; i < selections.length; i++) {
-    const selection = selections[i];
+  for (let i = 0; i < keys.length; i++) {
+    const selection = keys[i];
     if (!(selection in currentTable)) {
       break;
     }
     const value = currentTable[selection];
     if (value instanceof SourceHandler || value instanceof DrainHandler) {
-      if (i === selections.length - 1) {
+      if (i === keys.length - 1) {
         return value;
       } else {
         break;
@@ -226,7 +240,7 @@ function retrieveFromTable<HandlerType extends AnyDrainHandler | AnySourceHandle
       currentTable = value;
     }
   }
-  throw new Error(`failed to find a handler registered for selection: ${selections.join(" -> ")}`);
+  throw new Error(`Failed to find a handler registered for selection: ${keys.join(" -> ")}`);
 }
 
 interface ProgramOptions {
