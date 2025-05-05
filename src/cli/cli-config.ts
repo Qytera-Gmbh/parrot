@@ -1,4 +1,4 @@
-import { XrayTestPlanSourceHandler } from "../sources/xray/test-plan/xray-test-plan-source-handler.js";
+import { join } from "node:path";
 import type { AnySourceHandler } from "./cli-source-handler.js";
 
 export interface LookupTable<T> {
@@ -22,6 +22,22 @@ export function getRegisteredSources(): LookupTable<AnySourceHandler> {
  * Modifies Pass Parrot's configuration through a callback whose result will replace the current
  * configuration. The callback's only parameter is the current configuration.
  *
+ * @example
+ *
+ * ```ts
+ * await configureParrot((config) => {
+ *   return {
+ *     sources: {
+ *       ...config.sources,
+ *       ["my new top level source"]: new MyNewTopLevelSourceHandler(),
+ *       ["some other service"]: {
+ *         ["nested source"]: new MyNewNestedSourceHandler()
+ *       }
+ *     }
+ *   };
+ * });
+ * ```
+ *
  * @param callback the callback which returns the new configuration
  */
 export async function configureParrot(
@@ -31,9 +47,12 @@ export async function configureParrot(
 }
 
 let parrotConfiguration: ParrotConfiguration = {
-  sources: {
-    ["xray"]: {
-      ["test plan"]: new XrayTestPlanSourceHandler(),
-    },
-  },
+  sources: {},
 };
+
+/**
+ * The default plugin config files that come shipped with parrot.
+ *
+ * Note: we need to use the `.js` extension because the shipped package will contain `.js` files.
+ */
+export const DEFAULT_PLUGIN_CONFIG_FILES = [join(import.meta.dirname, "plugins", "xray-plugin.js")];

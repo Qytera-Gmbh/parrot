@@ -1,9 +1,15 @@
+#!/usr/bin/env node
+
 import { confirm, input, select } from "@inquirer/prompts";
 import { Command } from "commander";
 import { defaultLoaders } from "cosmiconfig";
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-import { getRegisteredSources, type LookupTable } from "./cli-config.js";
+import {
+  DEFAULT_PLUGIN_CONFIG_FILES,
+  getRegisteredSources,
+  type LookupTable,
+} from "./cli-config.js";
 import type { AnySourceHandler } from "./cli-source-handler.js";
 import { SourceHandler } from "./cli-source-handler.js";
 
@@ -11,7 +17,7 @@ import "dotenv/config";
 
 interface ProgramOptions {
   configFile?: string;
-  pluginFile?: string;
+  pluginFiles?: string[];
 }
 
 interface SerializedSource {
@@ -21,12 +27,7 @@ interface SerializedSource {
 }
 
 const PROGRAM = new Command()
-  .option("-p, --plugin-file <plugin-file>", "the parrot plugin file to use", (file) => {
-    if (!existsSync(file)) {
-      throw new Error(`Plugin file not found: ${file}`);
-    }
-    return file;
-  })
+  .option("-p, --plugin-files <plugin-file...>", "the parrot plugin files to use")
   .option(
     "-c, --config-file <config-file>",
     "the saved source and drain configuration to use",
@@ -38,20 +39,35 @@ const PROGRAM = new Command()
     }
   );
 
+console.log("┌──────────────────────────────────────┐");
+console.log("│                                      │");
+console.log("│           🦜 Parrot CLI 🦜           │");
+console.log("│                                      │");
+console.log("└──────────────────────────────────────┘");
+
 PROGRAM.parse();
 
 const OPTIONS = PROGRAM.opts<ProgramOptions>();
 
-if (OPTIONS.pluginFile) {
+await loadPluginFiles(OPTIONS.pluginFiles);
+
+async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
+  // Make sure to always load the plugin files that come shipped with parrot.
+  const files = [...DEFAULT_PLUGIN_CONFIG_FILES, ...(pluginFiles ?? [])];
   let loader;
-  if (OPTIONS.pluginFile.endsWith(".js") || OPTIONS.pluginFile.endsWith(".mjs")) {
-    loader = defaultLoaders[".js"];
-  } else if (OPTIONS.pluginFile.endsWith(".ts")) {
-    loader = defaultLoaders[".ts"];
-  } else {
-    throw new Error(`Unsupported plugin file extension: ${OPTIONS.pluginFile}`);
+  for (const pluginFile of files) {
+    if (!existsSync(pluginFile)) {
+      throw new Error(`Plugin file not found: ${pluginFile}`);
+    }
+    if (pluginFile.endsWith(".js") || pluginFile.endsWith(".mjs")) {
+      loader = defaultLoaders[".js"];
+    } else if (pluginFile.endsWith(".ts")) {
+      loader = defaultLoaders[".ts"];
+    } else {
+      throw new Error(`Unsupported plugin file extension: ${pluginFile}`);
+    }
+    await loader(pluginFile, await readFile(pluginFile, "utf-8"));
   }
-  await loader(OPTIONS.pluginFile, await readFile(OPTIONS.pluginFile, "utf-8"));
 }
 
 const SOURCE = await getSource(OPTIONS);
