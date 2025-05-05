@@ -1,5 +1,5 @@
 import * as Adaptive from "adaptivecards";
-import type { TestResults } from "../../models/test-results-model.js";
+import type { TestResult } from "../../models/test-model.js";
 import { createPieChart } from "./card-chart.js";
 
 export interface AdaptiveCardMessage {
@@ -18,29 +18,28 @@ export interface AdaptiveCardMessage {
  * @see https://adaptivecards.io/explorer/Column.html
  */
 export function getTestResultsCard(
-  testResults: TestResults,
+  testResults: TestResult[],
   details?: Record<string, string>
 ): AdaptiveCardMessage {
   const card = new Adaptive.AdaptiveCard();
   card.version = new Adaptive.Version(1, 5);
   card.addItem(
     getHeading({
-      button: { title: "Open Test Results", url: testResults.url },
       title: "Test Results",
     })
   );
   const summary = getQuickSummary({
     facts: Object.entries(details ?? {}).map(([key, value]) => new Adaptive.Fact(key, value)),
     stats: {
-      failed: testResults.results.filter((test) => test.result.status === "fail").length,
-      passed: testResults.results.filter((test) => test.result.status === "pass").length,
-      pending: testResults.results.filter((test) => test.result.status === "pending").length,
-      skipped: testResults.results.filter((test) => test.result.status === "skipped").length,
+      failed: testResults.filter((test) => test.status === "fail").length,
+      passed: testResults.filter((test) => test.status === "pass").length,
+      pending: testResults.filter((test) => test.status === "pending").length,
+      skipped: testResults.filter((test) => test.status === "skipped").length,
     },
   });
   summary.separator = true;
   card.addItem(summary);
-  card.addItem(getTestList(testResults.results));
+  card.addItem(getTestList(testResults));
   const json = card.toJSON();
   if (!json) {
     throw new Error("failed to create adaptive card");
@@ -57,10 +56,7 @@ export function getTestResultsCard(
   };
 }
 
-function getHeading(config: {
-  button?: { title: string; url: string };
-  title: string;
-}): Adaptive.CardElement {
+function getHeading(config: { title: string }): Adaptive.CardElement {
   const heading = new Adaptive.ColumnSet();
   const titleColumn = new Adaptive.Column("stretch");
   const title = new Adaptive.TextBlock(config.title);
@@ -72,17 +68,6 @@ function getHeading(config: {
   title.wrap = true;
   titleColumn.addItem(title);
   heading.addColumn(titleColumn);
-  if (config.button) {
-    const buttonColumn = new Adaptive.Column("auto");
-    const button = new Adaptive.ActionSet();
-    const openUrlAction = new Adaptive.OpenUrlAction();
-    openUrlAction.style = Adaptive.ActionStyle.Positive;
-    openUrlAction.title = config.button.title;
-    openUrlAction.url = config.button.url;
-    button.addAction(openUrlAction);
-    buttonColumn.addItem(button);
-    heading.addColumn(buttonColumn);
-  }
   return heading;
 }
 
@@ -164,7 +149,7 @@ function getQuickSummary(config: {
   return summary;
 }
 
-function getTestList(results: TestResults["results"]): Adaptive.CardElement {
+function getTestList(results: TestResult[]): Adaptive.CardElement {
   const container = new Adaptive.Container();
   if (results.length === 0) {
     return container;
@@ -220,14 +205,14 @@ function getTestList(results: TestResults["results"]): Adaptive.CardElement {
     const openTestAction = new Adaptive.OpenUrlAction();
     openTestAction.iconUrl = "icon:CursorClick";
     openTestAction.style = Adaptive.ActionStyle.Positive;
-    openTestAction.url = testResult.result.url;
+    openTestAction.url = testResult.executionMetadata.url;
     openTestButton.addAction(openTestAction);
     openTestButtonColumn.addItem(openTestButton);
 
     // Test status column content.
     const icon = new Adaptive.TextBlock("\u2589");
     icon.size = Adaptive.TextSize.ExtraLarge;
-    switch (testResult.result.status) {
+    switch (testResult.status) {
       case "fail":
         icon.color = Adaptive.TextColor.Attention;
         break;
@@ -244,7 +229,7 @@ function getTestList(results: TestResults["results"]): Adaptive.CardElement {
     testStatusColumn.addItem(icon);
 
     // Test name column content.
-    const testNameBlock = new Adaptive.TextBlock(testResult.test.name);
+    const testNameBlock = new Adaptive.TextBlock(testResult.name);
     testNameBlock.size = Adaptive.TextSize.Medium;
     testNameBlock.weight = Adaptive.TextWeight.Bolder;
     testNameColumn.addItem(testNameBlock);

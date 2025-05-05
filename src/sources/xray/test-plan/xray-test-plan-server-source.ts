@@ -1,8 +1,9 @@
 import type { XrayClientServer } from "@qytera/xray-client";
+import ansiColors from "ansi-colors";
 import type { Version3Client } from "jira.js";
 import { Version2Client } from "jira.js";
 import type { SearchForIssuesUsingJqlPost } from "jira.js/out/version3/parameters/index.js";
-import type { TestResults } from "../../../models/test-results-model.js";
+import type { TestResult } from "../../../models/test-model.js";
 import { Source } from "../../source.js";
 import { convertStatus } from "../xray-status.js";
 import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-source.js";
@@ -23,7 +24,8 @@ export class XrayTestPlanServerSource extends Source<
    */
   public async getTestResults(
     parameters: XrayTestPlanServerSourceParameters
-  ): Promise<TestResults> {
+  ): Promise<TestResult[]> {
+    console.log(`Fetching test results from ${ansiColors.cyan(parameters.testPlanKey)} ...`);
     let result;
     let query: SearchForIssuesUsingJqlPost = {
       fields: ["summary"],
@@ -35,12 +37,7 @@ export class XrayTestPlanServerSource extends Source<
     } else {
       result = await this.configuration.jira.client.issueSearch.searchForIssuesUsingJqlPost(query);
     }
-    const testPlan: TestResults = {
-      id: parameters.testPlanKey,
-      name: result.issues?.at(0)?.fields.summary ?? "unknown",
-      results: [],
-      url: `${this.configuration.jira.url}/browse/${parameters.testPlanKey}`,
-    };
+    const results: TestResult[] = [];
     const tests = await this.configuration.xray.client.testPlan.getTests(parameters.testPlanKey);
     const testsByKey = new Map<
       string,
@@ -76,22 +73,20 @@ export class XrayTestPlanServerSource extends Source<
           if (!xrayTest) {
             throw new Error(`Unexpected error occurred: ${issue.key} was not returned by Xray`);
           }
-          testPlan.results.push({
-            result: {
-              status: convertStatus(xrayTest.latestStatus),
-              url: `${this.configuration.jira.url}/browse/${issue.key}`,
+          results.push({
+            executionMetadata: {
+              url: `${this.configuration.jira.url}/browse/${parameters.testPlanKey}`,
             },
-            test: {
-              id: issue.fields.key as string,
-              name: issue.fields.summary,
-              url: `${this.configuration.jira.url}/browse/${issue.key}`,
-            },
+            id: issue.fields.key as string,
+            name: issue.fields.summary,
+            status: convertStatus(xrayTest.latestStatus),
+            url: `${this.configuration.jira.url}/browse/${issue.key}`,
           });
         }
         startAt = startAt + result.issues.length;
       }
     }
-    return testPlan;
+    return results;
   }
 }
 

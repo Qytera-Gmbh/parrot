@@ -1,8 +1,8 @@
 import type { XrayClientCloud } from "@qytera/xray-client";
+import ansiColors from "ansi-colors";
 import type { Version2Client, Version3Client } from "jira.js";
 import type { ProjectDetails } from "jira.js/out/version3/models/index.js";
-import type { Test } from "../../../models/test-model.js";
-import type { TestResults } from "../../../models/test-results-model.js";
+import type { TestResult } from "../../../models/test-model.js";
 import { Source } from "../../source.js";
 import { convertStatus } from "../xray-status.js";
 import type { JiraAuthentication, XrayAuthentication } from "./xray-test-plan-source.js";
@@ -21,13 +21,11 @@ export class XrayTestPlanCloudSource extends Source<
    * @param parameters the test plan retrieval parameters
    * @returns the test results of the test plan
    */
-  public async getTestResults(parameters: XrayTestPlanCloudSourceParameters): Promise<TestResults> {
-    const parsedTestPlan: TestResults = {
-      id: parameters.testPlanKey,
-      name: "unknown",
-      results: [],
-      url: `${this.configuration.jira.url}/browse/${parameters.testPlanKey}`,
-    };
+  public async getTestResults(
+    parameters: XrayTestPlanCloudSourceParameters
+  ): Promise<TestResult[]> {
+    console.log(`Fetching test results from ${ansiColors.cyan(parameters.testPlanKey)} ...`);
+    const results: TestResult[] = [];
     let startAt = 0;
     let hasMoreTests = true;
     while (hasMoreTests) {
@@ -61,7 +59,6 @@ export class XrayTestPlanCloudSource extends Source<
       if (!projectKey) {
         throw new Error(`failed to retrieve project of test plan ${parameters.testPlanKey}`);
       }
-      parsedTestPlan.name = result.jira?.summary as string;
       const returnedTests = result.tests?.results;
       if (!returnedTests || returnedTests.length === 0) {
         hasMoreTests = false;
@@ -70,39 +67,44 @@ export class XrayTestPlanCloudSource extends Source<
           if (!testIssue?.jira) {
             continue;
           }
-          const test: Test = {
-            id: testIssue.jira.key as string,
-            name: testIssue.jira.summary as string,
-            url: `${this.configuration.jira.url}/browse/${testIssue.jira.key as string}`,
-          };
+          // Casts are valid because the GraphQL query above includes all these fields.
+          const testId = testIssue.jira.key as string;
+          const testName = testIssue.jira.summary as string;
+          const testUrl = `${this.configuration.jira.url}/browse/${testIssue.jira.key as string}`;
           const testExecutionKey = testIssue.testRuns?.results?.at(0)?.testExecution?.jira?.key as
             | string
             | undefined;
           if (!testExecutionKey) {
-            parsedTestPlan.results.push({
-              result: {
-                status: "pending",
-                url: `${this.configuration.jira.url}/browser/${parameters.testPlanKey}`,
+            results.push({
+              executionMetadata: {
+                url: `${this.configuration.jira.url}/browse/${parameters.testPlanKey}`,
               },
-              test: test,
+              id: testId,
+              name: testName,
+              status: "pending",
+              url: testUrl,
             });
           } else {
             const testRun = testIssue.testRuns?.results?.at(0);
             if (!testRun?.status?.name) {
-              parsedTestPlan.results.push({
-                result: {
-                  status: "pending",
+              results.push({
+                executionMetadata: {
                   url: `${this.configuration.jira.url}/browser/${testExecutionKey}`,
                 },
-                test: test,
+                id: testId,
+                name: testName,
+                status: "pending",
+                url: testUrl,
               });
             } else {
-              parsedTestPlan.results.push({
-                result: {
-                  status: convertStatus(testRun.status.name),
+              results.push({
+                executionMetadata: {
                   url: `${this.configuration.jira.url}/projects/${projectKey}?selectedItem=com.atlassian.plugins.atlassian-connect-plugin%3Acom.xpandit.plugins.xray__testing-board&ac.testExecutionKey=${testExecutionKey}&ac.testKey=${testIssue.jira.key as string}`,
                 },
-                test: test,
+                id: testId,
+                name: testName,
+                status: convertStatus(testRun.status.name),
+                url: testUrl,
               });
             }
           }
@@ -110,7 +112,7 @@ export class XrayTestPlanCloudSource extends Source<
         startAt = startAt + returnedTests.length;
       }
     }
-    return parsedTestPlan;
+    return results;
   }
 }
 
