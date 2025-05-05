@@ -25,18 +25,18 @@ export class MicrosoftTeamsDrainHandler extends DrainHandler<
     return new MicrosoftTeamsDrain({});
   }
 
-  public async buildDrainParameters(): Promise<MicrosoftTeamsDrainDetails> {
+  public async buildOutlet(): Promise<MicrosoftTeamsDrainDetails> {
     return {
       incomingWebhookUrl: await this.getWebhookUrl(),
     };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public serializeDrainParameters(parameters: MicrosoftTeamsDrainDetails): SerializedParameters {
+  public serializeOutlet(parameters: MicrosoftTeamsDrainDetails): SerializedParameters {
     return {};
   }
 
-  public async deserializeDrainParameters(
+  public async deserializeOutlet(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     serializedParameters: SerializedParameters
   ): Promise<MicrosoftTeamsDrainDetails> {

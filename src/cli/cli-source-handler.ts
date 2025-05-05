@@ -7,8 +7,8 @@ import type { Source } from "../sources/source.js";
  */
 export abstract class SourceHandler<
   S extends Source<unknown, object>,
-  SerializedSourceConfiguration,
-  SerializedParameters = Parameters<S["getTestResults"]>[0],
+  SerializedSourceConfiguration = SourceConfiguration<S>,
+  SerializedInletConfiguration = InletConfiguration<S>,
 > {
   /**
    * Creates and returns a fully initialised source instance. The source can be generated from
@@ -55,11 +55,9 @@ export abstract class SourceHandler<
    * generated from environment variables or interactively created using packages such as
    * [`@inquirer/prompts`](https://www.npmjs.com/package/@inquirer/prompts).
    *
-   * @returns the parameters
+   * @returns the inlet configuration
    */
-  public abstract buildSourceParameters():
-    | Parameters<S["getTestResults"]>[0]
-    | Promise<Parameters<S["getTestResults"]>[0]>;
+  public abstract buildInlet(): InletConfiguration<S> | Promise<InletConfiguration<S>>;
 
   /**
    * Serializes the given source retrieval parameters into a format suitable for storage. The result
@@ -70,28 +68,31 @@ export abstract class SourceHandler<
    * The actual serialization format is up to the implementation. Anything goes, as long as the
    * corresponding deserialization method is able to accurately reconstruct the parameters.
    *
-   * @param parameters the complete parameters
+   * @param inlet the inlet configuration
    * @returns the JSON-serializable parameters
    */
-  public abstract serializeSourceParameters(
-    parameters: Parameters<S["getTestResults"]>[0]
-  ): Promise<SerializedParameters> | SerializedParameters;
+  public abstract serializeInlet(
+    inlet: InletConfiguration<S>
+  ): Promise<SerializedInletConfiguration> | SerializedInletConfiguration;
 
   /**
-   * Restores test result parameters from a previously serialized configuration. The returned
+   * Restores test result inlet parameters from a previously serialized configuration. The returned
    * parameters may be incomplete and require additional input during deserialization.
    *
    * The implementation must be able to restore what was produced by `serializeSourceParameters`.
    * Any missing or omitted details must be filled in from external sources (e.g. environment
    * variables or user input).
    *
-   * @param serializedParameters the serialized parameters
-   * @returns the restored parameters
+   * @param serializedInlet the serialized inlet
+   * @returns the restored inlet parameters
    */
-  public abstract deserializeSourceParameters(
-    serializedParameters: SerializedParameters
-  ): Parameters<S["getTestResults"]>[0] | Promise<Parameters<S["getTestResults"]>[0]>;
+  public abstract deserializeInlet(
+    serializedInlet: SerializedInletConfiguration
+  ): InletConfiguration<S> | Promise<InletConfiguration<S>>;
 }
+
+type SourceConfiguration<S> = S extends Source<infer SC, object> ? SC : never;
+type InletConfiguration<S> = S extends Source<unknown, infer IC> ? IC : never;
 
 // We use any here because I have no idea how to type/infer all the different source types.
 /* eslint-disable @typescript-eslint/no-explicit-any */
