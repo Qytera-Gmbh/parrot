@@ -1,19 +1,24 @@
-import type { TestResults } from "../../models/test-results-model.js";
+import ansiColors from "ansi-colors";
+import type { TestResult } from "../../models/test-model.js";
 import { Drain } from "../drain.js";
 import type { AdaptiveCardMessage } from "./microsoft-teams-cards.js";
 import { getTestResultsCard } from "./microsoft-teams-cards.js";
 
-export class MicrosoftTeamsDrain extends Drain<
-  unknown,
-  MicrosoftTeamsDrainDetails,
-  AdaptiveCardMessage
-> {
+export class MicrosoftTeamsDrain extends Drain<unknown, MicrosoftTeamsOutlet, AdaptiveCardMessage> {
+  /**
+   * How many characters to print at the beginning and end of the URL when printing the webhook URL.
+   */
+  private static readonly CHARACTERS_SHOWN = 10;
+
   public async writeTestResults(
-    results: TestResults,
-    details: MicrosoftTeamsDrainDetails
+    results: TestResult[],
+    outlet: MicrosoftTeamsOutlet
   ): Promise<AdaptiveCardMessage> {
-    const card = getTestResultsCard(results, { ["ID"]: results.id, ["Name"]: results.name });
-    const response = await fetch(details.incomingWebhookUrl, {
+    console.log(
+      `Draining test results to ${ansiColors.cyan(`${outlet.incomingWebhookUrl.slice(0, MicrosoftTeamsDrain.CHARACTERS_SHOWN)}...${outlet.incomingWebhookUrl.slice(-MicrosoftTeamsDrain.CHARACTERS_SHOWN)}`)} ...`
+    );
+    const card = getTestResultsCard(results);
+    const response = await fetch(outlet.incomingWebhookUrl, {
       body: JSON.stringify(card),
       headers: { ["Content-Type"]: "application/json" },
       method: "POST",
@@ -28,6 +33,6 @@ export class MicrosoftTeamsDrain extends Drain<
 /**
  * The details of a Microsoft Teams drain where test results can be written to.
  */
-export interface MicrosoftTeamsDrainDetails {
+export interface MicrosoftTeamsOutlet {
   incomingWebhookUrl: string;
 }

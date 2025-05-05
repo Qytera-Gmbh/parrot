@@ -5,6 +5,7 @@ import { Command } from "commander";
 import { defaultLoaders } from "cosmiconfig";
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+import type { TestResult } from "../models/test-model.js";
 import {
   DEFAULT_PLUGIN_CONFIG_FILES,
   getRegisteredDrains,
@@ -48,10 +49,15 @@ async function main() {
   program.parse();
   const options = program.opts<ProgramOptions>();
   await loadPluginFiles(options.pluginFiles);
-  const { inlet, source } = await getSource(options);
-  const { drain, outlet } = await getDrain(options);
-  const testResults = await source.getTestResults(inlet);
-  await drain.writeTestResults(testResults, outlet);
+  const { inlets, source } = await getSource(options);
+  const { drain, outlets } = await getDrain(options);
+  const testResults: TestResult[] = [];
+  for (const inlet of inlets) {
+    testResults.push(...(await source.getTestResults(inlet)));
+  }
+  for (const outlet of outlets) {
+    await drain.writeTestResults(testResults, outlet);
+  }
 }
 
 async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
@@ -79,7 +85,17 @@ async function getSource(options: ProgramOptions) {
       message: "Please select your source:",
     });
     const source = await result.handler.buildSource();
-    const inlet = await result.handler.buildInlet();
+    const inlets = [];
+    for (
+      let hasMoreInlets = true;
+      hasMoreInlets;
+      hasMoreInlets = await confirm({
+        message: "Would you like to add another inlet?",
+      })
+    ) {
+      const inlet = await result.handler.buildInlet();
+      inlets.push(inlet);
+    }
     const confirmation = await confirm({
       message: "Would you like to save your configuration for later use?",
     });
@@ -88,22 +104,29 @@ async function getSource(options: ProgramOptions) {
         default: "source-config.json",
         message: "Please specify the file to write the configuration to:",
       });
+      const serializedInlets = [];
+      for (const inlet of inlets) {
+        serializedInlets.push(await result.handler.serializeInlet(inlet));
+      }
       const serializedSource: SerializedSource = {
         configuration: await result.handler.serializeSource(source),
-        inlet: await result.handler.serializeInlet(inlet),
+        inlets: serializedInlets,
         selections: result.selections,
       };
       await writeFile(path, JSON.stringify(serializedSource, null, 2));
     }
-    return { inlet, source };
+    return { inlets, source };
   } else {
     const serializedSource = JSON.parse(
       await readFile(options.sourceFile, "utf-8")
     ) as SerializedSource;
     const handler = retrieveFromTable(getRegisteredSources(), serializedSource.selections);
     const source = await handler.deserializeSource(serializedSource.configuration);
-    const inlet = await handler.deserializeInlet(serializedSource.inlet);
-    return { inlet, source };
+    const inlets = [];
+    for (const inlet of serializedSource.inlets) {
+      inlets.push(await handler.deserializeInlet(inlet));
+    }
+    return { inlets, source };
   }
 }
 
@@ -113,7 +136,17 @@ async function getDrain(options: ProgramOptions) {
       message: "Please select your drain:",
     });
     const drain = await result.handler.buildDrain();
-    const outlet = await result.handler.buildOutlet();
+    const outlets = [];
+    for (
+      let hasMoreOutlets = true;
+      hasMoreOutlets;
+      hasMoreOutlets = await confirm({
+        message: "Would you like to add another outlet?",
+      })
+    ) {
+      const outlet = await result.handler.buildOutlet();
+      outlets.push(outlet);
+    }
     const confirmation = await confirm({
       message: "Would you like to save your configuration for later use?",
     });
@@ -122,22 +155,29 @@ async function getDrain(options: ProgramOptions) {
         default: "drain-config.json",
         message: "Please specify the file to write the configuration to:",
       });
+      const serializedOutlets = [];
+      for (const outlet of outlets) {
+        serializedOutlets.push(await result.handler.serializeOutlet(outlet));
+      }
       const serializedDrain: SerializedDrain = {
         configuration: await result.handler.serializeDrain(drain),
-        outlet: await result.handler.serializeOutlet(outlet),
+        outlets: serializedOutlets,
         selections: result.selections,
       };
       await writeFile(path, JSON.stringify(serializedDrain, null, 2));
     }
-    return { drain, outlet };
+    return { drain, outlets };
   } else {
     const serializedDrain = JSON.parse(
       await readFile(options.drainFile, "utf-8")
     ) as SerializedDrain;
     const handler = retrieveFromTable(getRegisteredDrains(), serializedDrain.selections);
     const drain = await handler.deserializeDrain(serializedDrain.configuration);
-    const outlet = await handler.deserializeOutlet(serializedDrain.outlet);
-    return { drain, outlet };
+    const outlets = [];
+    for (const inlet of serializedDrain.outlets) {
+      outlets.push(await handler.deserializeOutlet(inlet));
+    }
+    return { drain, outlets };
   }
 }
 
@@ -197,12 +237,12 @@ interface ProgramOptions {
 
 interface SerializedSource {
   configuration: unknown;
-  inlet: unknown;
+  inlets: unknown[];
   selections: string[];
 }
 
 interface SerializedDrain {
   configuration: unknown;
-  outlet: unknown;
+  outlets: unknown[];
   selections: string[];
 }

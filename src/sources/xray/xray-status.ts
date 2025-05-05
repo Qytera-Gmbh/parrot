@@ -1,4 +1,4 @@
-import type { TestResult } from "../../models/test-result-model.js";
+import type { TestResult } from "../../models/test-model.js";
 
 /**
  * Converts an Xray status to a Parrot status.

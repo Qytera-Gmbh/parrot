@@ -1,4 +1,4 @@
-import type { TestResults } from "../models/test-results-model.js";
+import type { TestResult } from "../models/test-model.js";
 
 /**
  * A source represents a service or tool from which test information can be pulled, such as an Xray
@@ -34,5 +34,5 @@ export abstract class Source<Configuration, Inlet extends object> {
    * @param inlet the inlet to retrieve results from
    * @returns the test results
    */
-  public abstract getTestResults(inlet: Inlet): Promise<TestResults> | TestResults;
+  public abstract getTestResults(inlet: Inlet): Promise<TestResult[]> | TestResult[];
 }

@@ -1,7 +1,7 @@
 import { input } from "@inquirer/prompts";
 import { DrainHandler } from "../../cli/cli-drain-handler.js";
 import { getEnv } from "../../util/env.js";
-import type { MicrosoftTeamsDrainDetails } from "./microsoft-teams-drain.js";
+import type { MicrosoftTeamsOutlet } from "./microsoft-teams-drain.js";
 import { MicrosoftTeamsDrain } from "./microsoft-teams-drain.js";
 
 export class MicrosoftTeamsDrainHandler extends DrainHandler<
@@ -25,21 +25,21 @@ export class MicrosoftTeamsDrainHandler extends DrainHandler<
     return new MicrosoftTeamsDrain({});
   }
 
-  public async buildOutlet(): Promise<MicrosoftTeamsDrainDetails> {
+  public async buildOutlet(): Promise<MicrosoftTeamsOutlet> {
     return {
       incomingWebhookUrl: await this.getWebhookUrl(),
     };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public serializeOutlet(parameters: MicrosoftTeamsDrainDetails): SerializedParameters {
+  public serializeOutlet(parameters: MicrosoftTeamsOutlet): SerializedParameters {
     return {};
   }
 
   public async deserializeOutlet(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     serializedParameters: SerializedParameters
-  ): Promise<MicrosoftTeamsDrainDetails> {
+  ): Promise<MicrosoftTeamsOutlet> {
     return {
       incomingWebhookUrl: await this.getWebhookUrl(),
     };

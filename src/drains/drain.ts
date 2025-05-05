@@ -1,4 +1,4 @@
-import type { TestResults } from "../models/test-results-model.js";
+import type { TestResult } from "../models/test-model.js";
 
 /**
  * A drain represents a service or tool to which test information can be pushed, such as Slack,
@@ -35,5 +35,5 @@ export abstract class Drain<Configuration, Outlet extends object, DrainResult> {
    * @param outlet the outlet to drain to
    * @returns the drained result
    */
-  public abstract writeTestResults(results: TestResults, outlet: Outlet): Promise<DrainResult>;
+  public abstract writeTestResults(results: TestResult[], outlet: Outlet): Promise<DrainResult>;
 }
