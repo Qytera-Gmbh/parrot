@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { AnyDrainHandler } from "./cli-drain-handler.js";
 import type { AnySourceHandler } from "./cli-source-handler.js";
 
 export interface LookupTable<T> {
@@ -6,6 +7,7 @@ export interface LookupTable<T> {
 }
 
 export interface ParrotConfiguration {
+  drains: LookupTable<AnyDrainHandler>;
   sources: LookupTable<AnySourceHandler>;
 }
 
@@ -16,6 +18,15 @@ export interface ParrotConfiguration {
  */
 export function getRegisteredSources(): LookupTable<AnySourceHandler> {
   return PARROT_CONFIGURATION.sources;
+}
+
+/**
+ * Returns the lookup table of drain handlers currently registered with Parrot.
+ *
+ * @returns the lookup table of drain handlers
+ */
+export function getRegisteredDrains(): LookupTable<AnyDrainHandler> {
+  return PARROT_CONFIGURATION.drains;
 }
 
 /**
@@ -45,10 +56,12 @@ export async function configureParrot(
   ) => Partial<ParrotConfiguration> | Promise<Partial<ParrotConfiguration>>
 ) {
   const newConfiguration = await callback(PARROT_CONFIGURATION);
+  PARROT_CONFIGURATION.drains = { ...PARROT_CONFIGURATION.drains, ...newConfiguration.drains };
   PARROT_CONFIGURATION.sources = { ...PARROT_CONFIGURATION.sources, ...newConfiguration.sources };
 }
 
 const PARROT_CONFIGURATION: ParrotConfiguration = {
+  drains: {},
   sources: {},
 };
 
