@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { JIRA_CLIENT_CLOUD, XRAY_CLIENT_CLOUD } from "../../../../../test/clients.js";
+import { XRAY_CLIENT_CLOUD } from "../../../../../test/clients.js";
 import { getEnv } from "../../../../util/env.js";
 import { XrayTestPlanCloudSource } from "./xray-test-plan-cloud-source.js";
 
@@ -10,7 +10,7 @@ describe(path.relative(process.cwd(), import.meta.filename), () => {
     it("returns test plan data", async () => {
       const url = getEnv("jira-url");
       const source = new XrayTestPlanCloudSource({
-        jira: { authentication: "basic", client: JIRA_CLIENT_CLOUD, url: url },
+        jira: { url: url },
         xray: {
           authentication: "client-credentials",
           client: XRAY_CLIENT_CLOUD,
