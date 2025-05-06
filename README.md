@@ -56,6 +56,7 @@ Using Parrot means interacting with two main components:
 # Usage
 
 Parrot comes with an easy-to-use CLI for configuring sources and drains.
+Simply run `npx parrot`.
 
 ```console
 npx parrot --help
@@ -63,10 +64,9 @@ npx parrot --help
 Usage: parrot [options]
 
 Options:
-  -d, --drain-file <drain-file>       path to a saved drain configuration file
+  -c, --config-file <config-file>     path to a saved Parrot configuration file
   -e, --env-file <env-file...>        one or more .env files to load environment variables from
   -p, --plugin-file <plugin-file...>  one or more Parrot plugin files to load
-  -s, --source-file <source-file>     path to a saved source configuration file
   -h, --help                          display help for command
 ```
 
