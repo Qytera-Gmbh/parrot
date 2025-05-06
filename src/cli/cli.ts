@@ -121,7 +121,7 @@ async function runSerializedConfiguration(configFile: string) {
   const serializedConfig = JSON.parse(
     await readFile(configFile, "utf-8")
   ) as SerializedConfiguration;
-  const deserializedSources: Pick<NewSource, "inlets" | "source">[] = [];
+  const deserializedSources: DeserializedSource[] = [];
   for (const serializedSource of serializedConfig.sources) {
     deserializedSources.push(await deserializeSource(serializedSource));
   }
@@ -131,7 +131,7 @@ async function runSerializedConfiguration(configFile: string) {
       testResults.push(...(await source.getTestResults(configuration)));
     }
   }
-  const deserializedDrains: Pick<NewDrain, "drain" | "outlets">[] = [];
+  const deserializedDrains: DeserializedDrain[] = [];
   for (const serializedDrain of serializedConfig.drains) {
     deserializedDrains.push(await deserializeDrain(serializedDrain));
   }
@@ -188,11 +188,11 @@ async function getNewDrain(): Promise<NewDrain> {
   return { drain, handler, name, outlets, selections };
 }
 
-async function deserializeSource(serializedSource: SerializedSource) {
+async function deserializeSource(serializedSource: SerializedSource): Promise<DeserializedSource> {
   const handler = retrieveFromTable(getRegisteredSources(), serializedSource.selections);
   console.log(`Deserializing source: ${serializedSource.name}`);
   const source = await handler.deserializeSource(serializedSource.configuration);
-  const inlets: NewSource["inlets"] = [];
+  const inlets: DeserializedSource["inlets"] = [];
   for (const { configuration, name } of serializedSource.inlets) {
     console.log(`  Deserializing inlet: ${name}`);
     inlets.push({ configuration: await handler.deserializeInlet(configuration), name: name });
@@ -200,11 +200,11 @@ async function deserializeSource(serializedSource: SerializedSource) {
   return { inlets, source };
 }
 
-async function deserializeDrain(serializedDrain: SerializedDrain) {
+async function deserializeDrain(serializedDrain: SerializedDrain): Promise<DeserializedDrain> {
   const handler = retrieveFromTable(getRegisteredDrains(), serializedDrain.selections);
   console.log(`Deserializing drain: ${serializedDrain.name}`);
   const drain = await handler.deserializeDrain(serializedDrain.configuration);
-  const outlets: NewDrain["outlets"] = [];
+  const outlets: DeserializedDrain["outlets"] = [];
   for (const { configuration, name } of serializedDrain.outlets) {
     console.log(`  Deserializing outlet: ${name}`);
     outlets.push({ configuration: await handler.deserializeOutlet(configuration), name: name });
@@ -372,3 +372,7 @@ interface SerializedDrain {
   outlets: { configuration: unknown; name: string }[];
   selections: string[];
 }
+
+type DeserializedSource = Pick<NewSource, "inlets" | "source">;
+
+type DeserializedDrain = Pick<NewDrain, "drain" | "outlets">;
