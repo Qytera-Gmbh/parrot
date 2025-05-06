@@ -30,14 +30,16 @@ await main();
 // ============================================================================================== //
 
 async function main() {
-  const program = new Command("parrot")
-    .option("-p, --plugin-file <plugin-file...>", "one or more Parrot plugin files to load")
-    .option("-s, --source-file <source-file>", "path to a saved source configuration file")
-    .option("-d, --drain-file <drain-file>", "path to a saved drain configuration file")
-    .option(
-      "-e, --env-file <env-file...>",
-      "one or more .env files to load environment variables from"
-    );
+  const options = {
+    ["-d, --drain-file <drain-file>"]: "path to a saved drain configuration file",
+    ["-e, --env-file <env-file...>"]: "one or more .env files to load environment variables from",
+    ["-p, --plugin-file <plugin-file...>"]: "one or more Parrot plugin files to load",
+    ["-s, --source-file <source-file>"]: "path to a saved source configuration file",
+  };
+  const program = new Command("parrot");
+  for (const [option, description] of Object.entries(options)) {
+    program.option(option, description);
+  }
   program.parse();
   const { drainFile, envFile, pluginFile, sourceFile } = program.opts<ProgramOptions>();
   loadEnvFiles(envFile);
