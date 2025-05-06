@@ -1,4 +1,5 @@
 export { configureParrot } from "./src/cli/cli-config.js";
+export type { ParrotConfiguration } from "./src/cli/cli-config.js";
 export { DrainHandler } from "./src/cli/cli-drain-handler.js";
 export { SourceHandler } from "./src/cli/cli-source-handler.js";
 export { Drain } from "./src/drain.js";
