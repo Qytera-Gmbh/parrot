@@ -14,22 +14,20 @@ import { convertStatus } from "../util/xray-status.js";
  */
 export class XrayTestPlanServerSource extends Source<
   XrayTestPlanServerSourceConfiguration,
-  XrayTestPlanServerSourceParameters
+  XrayTestPlanServerInlet
 > {
   /**
    * Retrieves a test plan from the Xray API.
    *
-   * @param parameters the test plan retrieval parameters
+   * @param inlet the test plan inlet parameters
    * @returns the test results of the test plan
    */
-  public async getTestResults(
-    parameters: XrayTestPlanServerSourceParameters
-  ): Promise<TestResult[]> {
-    console.log(`Fetching test results from ${ansiColors.cyan(parameters.testPlanKey)} ...`);
+  public async getTestResults(inlet: XrayTestPlanServerInlet): Promise<TestResult[]> {
+    console.log(`Fetching test results from ${ansiColors.cyan(inlet.testPlanKey)} ...`);
     let result;
     let query: SearchForIssuesUsingJqlPost = {
       fields: ["summary"],
-      jql: `issue in (${parameters.testPlanKey})`,
+      jql: `issue in (${inlet.testPlanKey})`,
     };
     // TypeScript won't let us search in the union of version 2 and 3 (jira.js problem).
     if (this.configuration.jira.client instanceof Version2Client) {
@@ -38,7 +36,7 @@ export class XrayTestPlanServerSource extends Source<
       result = await this.configuration.jira.client.issueSearch.searchForIssuesUsingJqlPost(query);
     }
     const results: TestResult[] = [];
-    const tests = await this.configuration.xray.client.testPlan.getTests(parameters.testPlanKey);
+    const tests = await this.configuration.xray.client.testPlan.getTests(inlet.testPlanKey);
     const testsByKey = new Map<
       string,
       {
@@ -75,7 +73,7 @@ export class XrayTestPlanServerSource extends Source<
           }
           results.push({
             executionMetadata: {
-              url: `${this.configuration.jira.url}/browse/${parameters.testPlanKey}`,
+              url: `${this.configuration.jira.url}/browse/${inlet.testPlanKey}`,
             },
             id: issue.fields.key as string,
             name: issue.fields.summary,
@@ -103,6 +101,6 @@ export interface XrayTestPlanServerSourceConfiguration {
   };
 }
 
-export interface XrayTestPlanServerSourceParameters {
+export interface XrayTestPlanServerInlet {
   testPlanKey: string;
 }

@@ -7,7 +7,7 @@ import { MicrosoftTeamsDrain } from "./microsoft-teams-drain.js";
 export class MicrosoftTeamsDrainHandler extends DrainHandler<
   MicrosoftTeamsDrain,
   SerializedConfiguration,
-  SerializedParameters
+  SerializedOutlet
 > {
   public buildDrain(): MicrosoftTeamsDrain {
     return new MicrosoftTeamsDrain({});
@@ -32,13 +32,13 @@ export class MicrosoftTeamsDrainHandler extends DrainHandler<
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public serializeOutlet(parameters: MicrosoftTeamsOutlet): SerializedParameters {
+  public serializeOutlet(outlet: MicrosoftTeamsOutlet): SerializedOutlet {
     return {};
   }
 
   public async deserializeOutlet(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    serializedParameters: SerializedParameters
+    serializedOutlet: SerializedOutlet
   ): Promise<MicrosoftTeamsOutlet> {
     return {
       incomingWebhookUrl: await this.getWebhookUrl(),
@@ -61,6 +61,6 @@ interface SerializedConfiguration {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface SerializedParameters {
+interface SerializedOutlet {
   // Nothing. Currently, only the web hook URL is required, which is private information.
 }
