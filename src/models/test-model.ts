@@ -13,5 +13,5 @@ export interface TestResult extends HasId, HasName, HasUrl {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface TestExecutionMetadata extends HasUrl {
-  //
+  // Nothing yet.
 }

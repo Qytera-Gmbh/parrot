@@ -18,6 +18,25 @@ export class StdOutDrain extends Drain<unknown, StdOutOutlet, string> {
     skipped: "/",
   };
 
+  /**
+   * The color functions to use when color support is enabled.
+   */
+  private static readonly COLOR_FUNCTIONS = {
+    /**
+     * A function for general information surrounding the tests (e.g. pass percentages).
+     */
+    chatter: Object.assign((msg: string) => ansiColors.bold(ansiColors.white(msg)), {
+      /**
+       * For highlighting stuff inside a 'chatter message'.
+       */
+      highlight: ansiColors.cyan,
+    }),
+    fail: ansiColors.red,
+    pass: ansiColors.green,
+    pending: ansiColors.gray,
+    skipped: ansiColors.yellow,
+  };
+
   public writeTestResults(results: TestResult[], outlet: StdOutOutlet): string {
     const sections = [
       "",
@@ -36,12 +55,10 @@ export class StdOutDrain extends Drain<unknown, StdOutOutlet, string> {
     const lines: string[] = [];
     const percentagePassing =
       (100 * testResults.filter((test) => test.status === "pass").length) / testResults.length;
-    if (outlet.supportsColor) {
+    if (outlet.useColor) {
       lines.push(
-        ansiColors.bold(
-          ansiColors.white(
-            `A total of ${ansiColors.cyan(testResults.length.toString())} tests were run with a passing percentage of ${ansiColors.cyan(percentagePassing.toFixed(2))} %`
-          )
+        StdOutDrain.COLOR_FUNCTIONS.chatter(
+          `A total of ${StdOutDrain.COLOR_FUNCTIONS.chatter.highlight(testResults.length.toString())} tests were run with a passing percentage of ${StdOutDrain.COLOR_FUNCTIONS.chatter.highlight(percentagePassing.toFixed(2))} %`
         )
       );
     } else {
@@ -55,13 +72,13 @@ export class StdOutDrain extends Drain<unknown, StdOutOutlet, string> {
   private getPassingTestsMessage(testResults: TestResult[], outlet: StdOutOutlet): string {
     const passedTests = testResults.filter((test) => test.status === "pass");
     const lines: string[] = [];
-    if (outlet.supportsColor) {
+    if (outlet.useColor) {
       lines.push(
-        ansiColors.bold(ansiColors.white(`Passing tests (${passedTests.length.toString()}):`))
+        StdOutDrain.COLOR_FUNCTIONS.chatter(`Passing tests (${passedTests.length.toString()}):`)
       );
       for (const passedTest of passedTests) {
         lines.push(
-          ansiColors.green(
+          StdOutDrain.COLOR_FUNCTIONS.pass(
             `${StdOutDrain.INDENT}${outlet.useUnicode ? StdOutDrain.UNICODE_CHARACTERS.pass : "-"} ${passedTest.name} (${passedTest.executionMetadata.url})`
           )
         );
@@ -80,13 +97,13 @@ export class StdOutDrain extends Drain<unknown, StdOutOutlet, string> {
   private getPendingTestsMessage(testResults: TestResult[], outlet: StdOutOutlet): string {
     const pendingTests = testResults.filter((test) => test.status === "pending");
     const lines: string[] = [];
-    if (outlet.supportsColor) {
+    if (outlet.useColor) {
       lines.push(
-        ansiColors.bold(ansiColors.white(`Pending tests (${pendingTests.length.toString()}):`))
+        StdOutDrain.COLOR_FUNCTIONS.chatter(`Pending tests (${pendingTests.length.toString()}):`)
       );
       for (const pendingTest of pendingTests) {
         lines.push(
-          ansiColors.gray(
+          StdOutDrain.COLOR_FUNCTIONS.pending(
             `${StdOutDrain.INDENT}${outlet.useUnicode ? StdOutDrain.UNICODE_CHARACTERS.pending : "-"} ${pendingTest.name} (${pendingTest.executionMetadata.url})`
           )
         );
@@ -105,13 +122,13 @@ export class StdOutDrain extends Drain<unknown, StdOutOutlet, string> {
   private getSkippedTestsMessage(testResults: TestResult[], outlet: StdOutOutlet): string {
     const skippedTests = testResults.filter((test) => test.status === "skipped");
     const lines: string[] = [];
-    if (outlet.supportsColor) {
+    if (outlet.useColor) {
       lines.push(
-        ansiColors.bold(ansiColors.white(`Skipped tests (${skippedTests.length.toString()}):`))
+        StdOutDrain.COLOR_FUNCTIONS.chatter(`Skipped tests (${skippedTests.length.toString()}):`)
       );
       for (const skippedTest of skippedTests) {
         lines.push(
-          ansiColors.yellow(
+          StdOutDrain.COLOR_FUNCTIONS.skipped(
             `${StdOutDrain.INDENT}${outlet.useUnicode ? StdOutDrain.UNICODE_CHARACTERS.skipped : "-"} ${skippedTest.name} (${skippedTest.executionMetadata.url})`
           )
         );
@@ -130,13 +147,13 @@ export class StdOutDrain extends Drain<unknown, StdOutOutlet, string> {
   private getFailedTestsMessage(testResults: TestResult[], outlet: StdOutOutlet): string {
     const failedTests = testResults.filter((test) => test.status === "fail");
     const lines: string[] = [];
-    if (outlet.supportsColor) {
+    if (outlet.useColor) {
       lines.push(
-        ansiColors.bold(ansiColors.white(`Failed tests (${failedTests.length.toString()}):`))
+        StdOutDrain.COLOR_FUNCTIONS.chatter(`Failed tests (${failedTests.length.toString()}):`)
       );
       for (const failedTest of failedTests) {
         lines.push(
-          ansiColors.red(
+          StdOutDrain.COLOR_FUNCTIONS.fail(
             `${StdOutDrain.INDENT}${outlet.useUnicode ? StdOutDrain.UNICODE_CHARACTERS.fail : "-"} ${failedTest.name} (${failedTest.executionMetadata.url})`
           )
         );
@@ -157,6 +174,6 @@ export class StdOutDrain extends Drain<unknown, StdOutOutlet, string> {
  * The details of a StdOut outlet where test results can be written to.
  */
 export interface StdOutOutlet {
-  supportsColor: boolean;
+  useColor: boolean;
   useUnicode: boolean;
 }
