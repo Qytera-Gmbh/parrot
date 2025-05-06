@@ -73,4 +73,5 @@ const PARROT_CONFIGURATION: ParrotConfiguration = {
 export const DEFAULT_PLUGIN_CONFIG_FILES = [
   join(import.meta.dirname, "plugins", "xray", "xray-plugin.js"),
   join(import.meta.dirname, "plugins", "microsoft", "teams", "microsoft-teams-plugin.js"),
+  join(import.meta.dirname, "plugins", "stdout", "stdout-plugin.js"),
 ];
