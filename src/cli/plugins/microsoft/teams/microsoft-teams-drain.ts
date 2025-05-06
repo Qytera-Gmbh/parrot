@@ -31,7 +31,7 @@ export class MicrosoftTeamsDrain extends Drain<unknown, MicrosoftTeamsOutlet, Ad
 }
 
 /**
- * The details of a Microsoft Teams drain where test results can be written to.
+ * The details of a Microsoft Teams outlet where test results can be written to.
  */
 export interface MicrosoftTeamsOutlet {
   incomingWebhookUrl: string;
