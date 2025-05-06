@@ -5,15 +5,15 @@ import { getEnv } from "../../../../util/env.js";
 import { SourceHandler } from "../../../cli-source-handler.js";
 import type { JiraAuthentication, XrayAuthentication } from "../util/constants.js";
 import { JIRA_AUTHENTICATION, XRAY_AUTHENTICATION } from "../util/constants.js";
-import type { XrayTestPlanCloudSourceParameters } from "./xray-test-plan-cloud-source.js";
+import type { XrayTestPlanCloudInlet } from "./xray-test-plan-cloud-source.js";
 import { XrayTestPlanCloudSource } from "./xray-test-plan-cloud-source.js";
-import type { XrayTestPlanServerSourceParameters } from "./xray-test-plan-server-source.js";
+import type { XrayTestPlanServerInlet } from "./xray-test-plan-server-source.js";
 import { XrayTestPlanServerSource } from "./xray-test-plan-server-source.js";
 
 export class XrayTestPlanSourceHandler extends SourceHandler<
   XrayTestPlanCloudSource | XrayTestPlanServerSource,
   SerializedConfigurationCloud | SerializedConfigurationServer,
-  SerializedParameters
+  SerializedInlet
 > {
   public async buildSource(): Promise<XrayTestPlanCloudSource | XrayTestPlanServerSource> {
     const isServer = await this.isJiraServerSource();
@@ -145,9 +145,7 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
     });
   }
 
-  public async buildInlet(): Promise<
-    XrayTestPlanCloudSourceParameters | XrayTestPlanServerSourceParameters
-  > {
+  public async buildInlet(): Promise<XrayTestPlanCloudInlet | XrayTestPlanServerInlet> {
     const testPlanKey = await input({
       message:
         "Please enter the issue key of the test plan you want to use as an inlet (e.g. ABC-123):",
@@ -155,16 +153,14 @@ export class XrayTestPlanSourceHandler extends SourceHandler<
     return { testPlanKey };
   }
 
-  public serializeInlet(
-    parameters: XrayTestPlanCloudSourceParameters | XrayTestPlanServerSourceParameters
-  ): SerializedParameters {
-    return { testPlanKey: parameters.testPlanKey };
+  public serializeInlet(inlet: XrayTestPlanCloudInlet | XrayTestPlanServerInlet): SerializedInlet {
+    return { testPlanKey: inlet.testPlanKey };
   }
 
   public deserializeInlet(
-    serializedParameters: SerializedParameters
-  ): XrayTestPlanCloudSourceParameters | XrayTestPlanServerSourceParameters {
-    return { testPlanKey: serializedParameters.testPlanKey };
+    serializedInlet: SerializedInlet
+  ): XrayTestPlanCloudInlet | XrayTestPlanServerInlet {
+    return { testPlanKey: serializedInlet.testPlanKey };
   }
 
   private async isJiraServerSource(): Promise<boolean> {
@@ -317,7 +313,7 @@ interface SerializedConfigurationCloud {
   };
 }
 
-interface SerializedParameters {
+interface SerializedInlet {
   testPlanKey: string;
 }
 

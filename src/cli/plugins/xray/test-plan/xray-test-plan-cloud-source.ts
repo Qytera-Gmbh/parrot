@@ -12,24 +12,22 @@ import { convertStatus } from "../util/xray-status.js";
  */
 export class XrayTestPlanCloudSource extends Source<
   XrayTestPlanCloudSourceConfiguration,
-  XrayTestPlanCloudSourceParameters
+  XrayTestPlanCloudInlet
 > {
   /**
    * Retrieves a test plan from the Xray API.
    *
-   * @param parameters the test plan retrieval parameters
+   * @param inlet the test plan inlet parameters
    * @returns the test results of the test plan
    */
-  public async getTestResults(
-    parameters: XrayTestPlanCloudSourceParameters
-  ): Promise<TestResult[]> {
-    console.log(`Fetching test results from ${ansiColors.cyan(parameters.testPlanKey)} ...`);
+  public async getTestResults(inlet: XrayTestPlanCloudInlet): Promise<TestResult[]> {
+    console.log(`Fetching test results from ${ansiColors.cyan(inlet.testPlanKey)} ...`);
     const results: TestResult[] = [];
     let startAt = 0;
     let hasMoreTests = true;
     while (hasMoreTests) {
       const response = await this.configuration.xray.client.graphql.getTestPlans(
-        { jql: `issue in (${parameters.testPlanKey})`, limit: 1 },
+        { jql: `issue in (${inlet.testPlanKey})`, limit: 1 },
         (testPlanResults) => [
           testPlanResults.results((testPlan) => [
             testPlan.jira({ fields: ["summary", "project"] }),
@@ -51,12 +49,12 @@ export class XrayTestPlanCloudSource extends Source<
       );
       const result = response.results?.at(0);
       if (!result) {
-        throw new Error(`failed to find test plan ${parameters.testPlanKey}`);
+        throw new Error(`failed to find test plan ${inlet.testPlanKey}`);
       }
       const testPlanProject = result.jira?.project as ProjectDetails | undefined;
       const projectKey = testPlanProject?.key;
       if (!projectKey) {
-        throw new Error(`failed to retrieve project of test plan ${parameters.testPlanKey}`);
+        throw new Error(`failed to retrieve project of test plan ${inlet.testPlanKey}`);
       }
       const returnedTests = result.tests?.results;
       if (!returnedTests || returnedTests.length === 0) {
@@ -76,7 +74,7 @@ export class XrayTestPlanCloudSource extends Source<
           if (!testExecutionKey) {
             results.push({
               executionMetadata: {
-                url: `${this.configuration.jira.url}/browse/${parameters.testPlanKey}`,
+                url: `${this.configuration.jira.url}/browse/${inlet.testPlanKey}`,
               },
               id: testId,
               name: testName,
@@ -126,6 +124,6 @@ export interface XrayTestPlanCloudSourceConfiguration {
   };
 }
 
-export interface XrayTestPlanCloudSourceParameters {
+export interface XrayTestPlanCloudInlet {
   testPlanKey: string;
 }
