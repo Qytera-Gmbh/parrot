@@ -22,7 +22,7 @@ export class StdOutDrainHandler extends DrainHandler<StdOutDrain> {
 
   public async buildOutlet(): Promise<StdOutOutlet> {
     return {
-      supportsColor: await this.getColorSupport(),
+      useColor: await this.getColorSupport(),
       useUnicode: await this.getUnicodeSupport(),
     };
   }

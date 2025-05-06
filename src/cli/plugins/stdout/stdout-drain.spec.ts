@@ -67,7 +67,7 @@ describe(path.relative(process.cwd(), import.meta.filename), () => {
         },
       ],
       {
-        supportsColor: false,
+        useColor: false,
         useUnicode: false,
       }
     );
@@ -160,7 +160,7 @@ describe(path.relative(process.cwd(), import.meta.filename), () => {
         },
       ],
       {
-        supportsColor: true,
+        useColor: true,
         useUnicode: false,
       }
     );
@@ -253,7 +253,7 @@ describe(path.relative(process.cwd(), import.meta.filename), () => {
         },
       ],
       {
-        supportsColor: false,
+        useColor: false,
         useUnicode: true,
       }
     );
