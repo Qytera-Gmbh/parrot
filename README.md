@@ -63,10 +63,10 @@ npx parrot --help
 Usage: parrot [options]
 
 Options:
-  -p, --plugin-file <plugin-file...>  one or more Parrot plugin files to load
-  -s, --source-file <source-file>     path to a saved source configuration file
   -d, --drain-file <drain-file>       path to a saved drain configuration file
   -e, --env-file <env-file...>        one or more .env files to load environment variables from
+  -p, --plugin-file <plugin-file...>  one or more Parrot plugin files to load
+  -s, --source-file <source-file>     path to a saved source configuration file
   -h, --help                          display help for command
 ```
 
