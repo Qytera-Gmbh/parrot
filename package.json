@@ -1,6 +1,6 @@
 {
   "name": "@qytera/parrot",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A tool for aggregating test results and forwarding them to various destinations, such as HTML reports, Microsoft Teams or Slack.",
   "main": "index.js",
   "scripts": {
