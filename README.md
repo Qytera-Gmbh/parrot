@@ -63,10 +63,11 @@ npx parrot --help
 Usage: parrot [options]
 
 Options:
-  -p, --plugin-files <plugin-file...>  the parrot plugin files to use
-  -s, --source-file <source-file>      the saved source configuration to use
-  -d, --drain-file <drain-file>        the saved drain configuration to use
-  -h, --help                           display help for command
+  -p, --plugin-file <plugin-file...>  one or more Parrot plugin files to load
+  -s, --source-file <source-file>     path to a saved source configuration file
+  -d, --drain-file <drain-file>       path to a saved drain configuration file
+  -e, --env-file <env-file...>        one or more .env files to load environment variables from
+  -h, --help                          display help for command
 ```
 
 Source and drain configurations can be saved to files for later reuse, speeding up subsequent Parrot runs.
@@ -75,7 +76,7 @@ Source and drain configurations can be saved to files for later reuse, speeding 
 > Note that sensitive values such as usernames or passwords are not stored in the configuration files.
 > Which values to save and which to omit is baked into the source and drain implementations.
 >
-> However, Parrot automatically parses .env files (if available) and loads their values into the environment before the CLI starts.
+> However, Parrot can parse `.env` files and load their values into the environment before it starts.
 > This makes the CLI experience smoother by pre-populating configuration values and reducing the number of interactive questions asked.
 >
 > If your [custom source or drain](#custom-plugins) relies on environment variables (e.g. credentials, endpoints, default filters), simply access them via `process.env` in your plugin logic.

@@ -3,6 +3,7 @@
 import { confirm, input, select } from "@inquirer/prompts";
 import { Command } from "commander";
 import { defaultLoaders } from "cosmiconfig";
+import { config } from "dotenv";
 import { readFile, writeFile } from "node:fs/promises";
 import type { TestResult } from "../models/test-model.js";
 import {
@@ -14,8 +15,6 @@ import {
 import { DrainHandler, type AnyDrainHandler } from "./cli-drain-handler.js";
 import type { AnySourceHandler } from "./cli-source-handler.js";
 import { SourceHandler } from "./cli-source-handler.js";
-
-import "dotenv/config";
 
 console.log("┌──────────────────────────────────────┐");
 console.log("│                                      │");
@@ -32,12 +31,17 @@ await main();
 
 async function main() {
   const program = new Command("parrot")
-    .option("-p, --plugin-files <plugin-file...>", "the parrot plugin files to use")
-    .option("-s, --source-file <source-file>", "the saved source configuration to use")
-    .option("-d, --drain-file <drain-file>", "the saved drain configuration to use");
+    .option("-p, --plugin-file <plugin-file...>", "one or more Parrot plugin files to load")
+    .option("-s, --source-file <source-file>", "path to a saved source configuration file")
+    .option("-d, --drain-file <drain-file>", "path to a saved drain configuration file")
+    .option(
+      "-e, --env-file <env-file...>",
+      "one or more .env files to load environment variables from"
+    );
   program.parse();
-  const { drainFile, pluginFiles, sourceFile } = program.opts<ProgramOptions>();
-  await loadPluginFiles(pluginFiles);
+  const { drainFile, envFile, pluginFile, sourceFile } = program.opts<ProgramOptions>();
+  loadEnvFiles(envFile);
+  await loadPluginFiles(pluginFile);
   const { inlets, source } = await getSource(sourceFile);
   const { drain, outlets } = await getDrain(drainFile);
   const testResults: TestResult[] = [];
@@ -49,7 +53,15 @@ async function main() {
   }
 }
 
-async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFiles"]) {
+function loadEnvFiles(envFiles: ProgramOptions["envFile"]) {
+  if (envFiles) {
+    for (const envFile of envFiles) {
+      config({ path: envFile });
+    }
+  }
+}
+
+async function loadPluginFiles(pluginFiles: ProgramOptions["pluginFile"]) {
   const files = [...DEFAULT_PLUGIN_CONFIG_FILES];
   if (pluginFiles) {
     files.push(...pluginFiles);
@@ -94,7 +106,7 @@ async function getSource(sourceFile?: string) {
       inlets.push(inlet);
     }
     const confirmation = await confirm({
-      message: "Would you like to save your configuration for later use?",
+      message: "Would you like to save your source configuration?",
     });
     if (confirmation) {
       const path = await input({
@@ -143,7 +155,7 @@ async function getDrain(drainFile?: string) {
       outlets.push(outlet);
     }
     const confirmation = await confirm({
-      message: "Would you like to save your configuration for later use?",
+      message: "Would you like to save your drain configuration?",
     });
     if (confirmation) {
       const path = await input({
@@ -170,13 +182,13 @@ async function getDrain(drainFile?: string) {
  * concrete handler instance is reached.
  *
  * @param table a lookup table containing either handlers or further nested tables
- * @param config configuration for the selection prompts
+ * @param options configuration for the selection prompts
  *
  * @throws if the specified table has no selectable keys
  */
 async function descendIntoTable<HandlerType extends AnyDrainHandler | AnySourceHandler>(
   table: LookupTable<HandlerType>,
-  config: { message: string }
+  options: { message: string }
 ): Promise<{
   handler: HandlerType;
   selections: string[];
@@ -187,7 +199,7 @@ async function descendIntoTable<HandlerType extends AnyDrainHandler | AnySourceH
   }
   const choice = await select<string>({
     choices: keys,
-    message: config.message,
+    message: options.message,
   });
   const value = table[choice];
   if (value instanceof SourceHandler || value instanceof DrainHandler) {
@@ -245,7 +257,8 @@ function retrieveFromTable<HandlerType extends AnyDrainHandler | AnySourceHandle
 
 interface ProgramOptions {
   drainFile?: string;
-  pluginFiles?: string[];
+  envFile?: string[];
+  pluginFile?: string[];
   sourceFile?: string;
 }
 
