@@ -18,17 +18,17 @@ import { DrainHandler, type AnyDrainHandler } from "./cli-drain-handler.js";
 import type { AnySourceHandler } from "./cli-source-handler.js";
 import { SourceHandler } from "./cli-source-handler.js";
 
-console.log("┌──────────────────────────────────────┐");
-console.log("│                                      │");
-console.log("│              Parrot CLI              │");
-console.log("│                                      │");
-console.log("└──────────────────────────────────────┘");
+console.log("┌──────────────────────────────────────────────────────────────────┐");
+console.log("│                                                                  │");
+console.log("│                            Parrot CLI                            │");
+console.log("│                                                                  │");
+console.log("└──────────────────────────────────────────────────────────────────┘");
 
 await main();
 
 // ============================================================================================== //
 // We're dealing with parsed configurations of unknown sources/drains. There's no way around any.
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
 // ============================================================================================== //
 
 async function main() {
@@ -105,14 +105,14 @@ async function runNewConfiguration() {
   }
   const testResults: TestResult[] = [];
   for (const newSource of newSources) {
-    for (const inlet of newSource.inlets) {
-      const inletResults = await newSource.source.getTestResults(inlet);
+    for (const { configuration } of newSource.inlets) {
+      const inletResults = await newSource.source.getTestResults(configuration);
       testResults.push(...inletResults);
     }
   }
   for (const newDrain of newDrains) {
-    for (const outlet of newDrain.outlets) {
-      await newDrain.drain.writeTestResults(testResults, outlet);
+    for (const { configuration } of newDrain.outlets) {
+      await newDrain.drain.writeTestResults(testResults, configuration);
     }
   }
 }
@@ -121,23 +121,23 @@ async function runSerializedConfiguration(configFile: string) {
   const serializedConfig = JSON.parse(
     await readFile(configFile, "utf-8")
   ) as SerializedConfiguration;
-  const deserializedSources = [];
+  const deserializedSources: Pick<NewSource, "inlets" | "source">[] = [];
   for (const serializedSource of serializedConfig.sources) {
     deserializedSources.push(await deserializeSource(serializedSource));
   }
   const testResults: TestResult[] = [];
   for (const { inlets, source } of deserializedSources) {
-    for (const inlet of inlets) {
-      testResults.push(...(await source.getTestResults(inlet)));
+    for (const { configuration } of inlets) {
+      testResults.push(...(await source.getTestResults(configuration)));
     }
   }
-  const deserializedDrains = [];
+  const deserializedDrains: Pick<NewDrain, "drain" | "outlets">[] = [];
   for (const serializedDrain of serializedConfig.drains) {
     deserializedDrains.push(await deserializeDrain(serializedDrain));
   }
   for (const { drain, outlets } of deserializedDrains) {
-    for (const outlet of outlets) {
-      await drain.writeTestResults(testResults, outlet);
+    for (const { configuration } of outlets) {
+      await drain.writeTestResults(testResults, configuration);
     }
   }
 }
@@ -147,15 +147,22 @@ async function getNewSource(): Promise<NewSource> {
     message: "Please select a source:",
   });
   const source = await handler.buildSource();
-  const inlets = [];
+  const name = await input({
+    message: "Enter a name for the source (e.g. 'my source'):",
+  });
+  const inlets: NewSource["inlets"] = [];
   do {
-    inlets.push(await handler.buildInlet());
+    const inletConfiguration = await handler.buildInlet();
+    const inletName = await input({
+      message: "Enter a name for the inlet (e.g. 'my inlet'):",
+    });
+    inlets.push({ configuration: inletConfiguration, name: inletName });
   } while (
     await confirm({
       message: "Would you like to add another inlet?",
     })
   );
-  return { handler, inlets, selections, source };
+  return { handler, inlets, name, selections, source };
 }
 
 async function getNewDrain(): Promise<NewDrain> {
@@ -163,33 +170,44 @@ async function getNewDrain(): Promise<NewDrain> {
     message: "Please select a drain:",
   });
   const drain = await handler.buildDrain();
-  const outlets = [];
+  const name = await input({
+    message: "Enter a name for the drain (e.g. 'my drain'):",
+  });
+  const outlets: NewDrain["outlets"] = [];
   do {
-    outlets.push(await handler.buildOutlet());
+    const outletConfiguration = await handler.buildOutlet();
+    const outletName = await input({
+      message: "Enter a name for the outlet (e.g. 'my outlet'):",
+    });
+    outlets.push({ configuration: outletConfiguration, name: outletName });
   } while (
     await confirm({
       message: "Would you like to add another outlet?",
     })
   );
-  return { drain, handler, outlets, selections };
+  return { drain, handler, name, outlets, selections };
 }
 
 async function deserializeSource(serializedSource: SerializedSource) {
   const handler = retrieveFromTable(getRegisteredSources(), serializedSource.selections);
+  console.log(`Deserializing source: ${serializedSource.name}`);
   const source = await handler.deserializeSource(serializedSource.configuration);
-  const inlets = [];
-  for (const inlet of serializedSource.inlets) {
-    inlets.push(await handler.deserializeInlet(inlet));
+  const inlets: NewSource["inlets"] = [];
+  for (const { configuration, name } of serializedSource.inlets) {
+    console.log(`  Deserializing inlet: ${name}`);
+    inlets.push({ configuration: await handler.deserializeInlet(configuration), name: name });
   }
   return { inlets, source };
 }
 
 async function deserializeDrain(serializedDrain: SerializedDrain) {
   const handler = retrieveFromTable(getRegisteredDrains(), serializedDrain.selections);
+  console.log(`Deserializing drain: ${serializedDrain.name}`);
   const drain = await handler.deserializeDrain(serializedDrain.configuration);
-  const outlets = [];
-  for (const inlet of serializedDrain.outlets) {
-    outlets.push(await handler.deserializeOutlet(inlet));
+  const outlets: NewDrain["outlets"] = [];
+  for (const { configuration, name } of serializedDrain.outlets) {
+    console.log(`  Deserializing outlet: ${name}`);
+    outlets.push({ configuration: await handler.deserializeOutlet(configuration), name: name });
   }
   return { drain, outlets };
 }
@@ -204,28 +222,36 @@ async function serializeConfiguration(sources: NewSource[], drains: NewDrain[]) 
     sources: [],
   };
   for (const choice of sources) {
-    const serializedInlets = [];
-    for (const inlet of choice.inlets) {
-      serializedInlets.push(await choice.handler.serializeInlet(inlet));
+    const serializedInlets: SerializedSource["inlets"] = [];
+    for (const { configuration, name } of choice.inlets) {
+      serializedInlets.push({
+        configuration: await choice.handler.serializeInlet(configuration),
+        name: name,
+      });
     }
     serializedConfig.sources.push({
       configuration: await choice.handler.serializeSource(choice.source),
       inlets: serializedInlets,
+      name: choice.name,
       selections: choice.selections,
     });
   }
   for (const choice of drains) {
-    const serializedOutlets = [];
-    for (const outlet of choice.outlets) {
-      serializedOutlets.push(await choice.handler.serializeOutlet(outlet));
+    const serializedOutlets: SerializedDrain["outlets"] = [];
+    for (const { configuration, name } of choice.outlets) {
+      serializedOutlets.push({
+        configuration: await choice.handler.serializeOutlet(configuration),
+        name: name,
+      });
     }
     serializedConfig.drains.push({
       configuration: await choice.handler.serializeDrain(choice.drain),
+      name: choice.name,
       outlets: serializedOutlets,
       selections: choice.selections,
     });
   }
-  await writeFile(path, JSON.stringify(serializedConfig, null, 2));
+  await writeFile(path, JSON.stringify(serializedConfig));
 }
 
 /**
@@ -314,7 +340,8 @@ interface ProgramOptions {
 
 interface NewSource {
   handler: AnySourceHandler;
-  inlets: any[];
+  inlets: { configuration: any; name: string }[];
+  name: string;
   selections: string[];
   source: Source<any, any>;
 }
@@ -322,7 +349,8 @@ interface NewSource {
 interface NewDrain {
   drain: Drain<any, any, any>;
   handler: AnyDrainHandler;
-  outlets: any[];
+  name: string;
+  outlets: { configuration: any; name: string }[];
   selections: string[];
 }
 
@@ -333,12 +361,14 @@ interface SerializedConfiguration {
 
 interface SerializedSource {
   configuration: unknown;
-  inlets: unknown[];
+  inlets: { configuration: unknown; name: string }[];
+  name: string;
   selections: string[];
 }
 
 interface SerializedDrain {
   configuration: unknown;
-  outlets: unknown[];
+  name: string;
+  outlets: { configuration: unknown; name: string }[];
   selections: string[];
 }
